@@ -1033,233 +1033,43 @@ button {
     font-size: 14px;
   }
 
+  .dashboard-container {
+    padding: 12px;
+    max-width: 100%;
+  }
+
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    padding: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
   }
 
   .dashboard-header h1 {
-    font-size: 22px;
+    font-size: 20px;
+  }
+
+  .dashboard-header p {
+    font-size: 12px;
+  }
+
+  .dashboard-content {
+    gap: 16px;
   }
 
   .stats-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .stat-card {
-    padding: 16px;
-  }
-
-  .stat-number {
-    font-size: 28px;
-  }
-
-  .action-buttons {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .action-buttons button {
-    padding: 10px 12px;
-    font-size: 12px;
-  }
-
-  .items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-  }
-
-  .selected-item {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .table-header,
-  .table-row {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 10px;
-  }
-
-  .table-header {
-    display: none;
-  }
-
-  .table-row {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    background-color: #f9f9f9;
-  }
-
-  .table-row::before {
-    content: attr(data-label);
-    font-weight: bold;
-    color: #666;
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  .calendar-weekdays,
-  .calendar-days {
-    gap: 4px;
-  }
-
-  .calendar-day {
-    min-height: 50px;
-    font-size: 12px;
-  }
-
-  .calendar-legend {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .page-header h1 {
-    font-size: 20px;
-  }
-
-  .bills-layout {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .bills-list {
-    max-height: none;
-  }
-
-  .bill-details-section {
-    position: static;
-    top: auto;
-  }
-
-  .filter-buttons {
-    gap: 6px;
-  }
-
-  .filter-btn {
-    padding: 6px 10px;
-    font-size: 11px;
-  }
-
-  .bill-list-item {
-    padding: 10px;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .bill-list-header {
-    width: 100%;
-    margin-bottom: 8px;
-  }
-
-  .bill-list-header h4 {
-    font-size: 13px;
-  }
-
-  .detail-row {
-    flex-direction: column;
-    padding: 6px 0;
-  }
-
-  .detail-row .label {
-    margin-bottom: 4px;
-  }
-
-  .detail-row .value {
-    text-align: left;
-  }
-
-  .login-card {
-    padding: 24px;
-    max-width: 100%;
-  }
-
-  .login-card h1 {
-    font-size: 22px;
-  }
-
-  .bill-form {
-    padding: 16px;
-  }
-
-  .form-section {
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-  }
-
-  .form-section h2 {
-    font-size: 15px;
-  }
-
-  .items-container {
-    padding: 16px;
-  }
-
-  .items-management {
-    padding: 16px;
-  }
-
-  .create-bill-container {
-    padding: 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .home-content {
-    padding: 20px;
-  }
-
-  .home-content h1 {
-    font-size: 22px;
-  }
-
-  .home-content h2 {
-    font-size: 16px;
-  }
-
-  .login-card {
-    padding: 20px;
-  }
-
-  .login-card h1 {
-    font-size: 20px;
-  }
-
-  .login-card h2 {
-    font-size: 14px;
-  }
-
-  .dashboard-container {
-    padding: 12px;
-  }
-
-  .dashboard-header {
-    padding: 12px;
-    margin-bottom: 16px;
-  }
-
-  .dashboard-header h1 {
-    font-size: 20px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
     gap: 10px;
   }
 
   .stat-card {
     padding: 12px;
+  }
+
+  .stat-card h3 {
+    font-size: 12px;
+    margin-bottom: 8px;
   }
 
   .stat-number {
@@ -1267,78 +1077,37 @@ button {
   }
 
   .action-buttons {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
   .action-buttons button {
-    padding: 8px 10px;
-    font-size: 11px;
+    padding: 8px 10px !important;
+    font-size: 11px !important;
     width: 100%;
   }
 
-  .items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 8px;
-  }
-
-  .item-name {
-    font-size: 11px;
-  }
-
-  .item-rate {
-    font-size: 12px;
-  }
-
-  .bill-form {
+  .section {
     padding: 12px;
   }
 
-  .form-group input,
-  .form-group select {
-    padding: 8px;
-    font-size: 13px;
-  }
-
-  .qty-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
-  }
-
-  .qty-input {
-    width: 40px;
-    padding: 3px;
-    font-size: 12px;
-  }
-
-  .bill-total {
-    padding: 12px;
-  }
-
-  .bill-total h3 {
+  .section h2 {
     font-size: 16px;
+    margin-bottom: 12px;
   }
 
-  .bills-container {
-    padding: 12px;
-  }
-
-  .page-header {
-    padding: 12px;
-    margin-bottom: 16px;
-  }
-
-  .page-header h1 {
-    font-size: 18px;
-  }
-
-  .bills-list-section {
-    padding: 12px;
+  .bills-list {
+    gap: 8px;
   }
 
   .bill-list-item {
     padding: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .bill-list-header {
+    width: 100%;
     margin-bottom: 6px;
   }
 
@@ -1346,81 +1115,301 @@ button {
     font-size: 12px;
   }
 
-  .bill-details-section {
-    padding: 12px;
-  }
-
-  .bill-details-card h2 {
-    font-size: 16px;
-    margin-bottom: 12px;
-  }
-
   .detail-row {
+    flex-direction: column;
     padding: 4px 0;
     font-size: 12px;
   }
 
-  .calendar-container {
-    padding: 12px;
+  .detail-row .label {
+    margin-bottom: 2px;
   }
 
-  .calendar-card {
+  .detail-row .value {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-size: 13px;
+  }
+
+  .home-content {
     padding: 16px;
   }
 
-  .calendar-header h2 {
+  .home-content h1 {
+    font-size: 20px;
+  }
+
+  .home-content h2 {
+    font-size: 14px;
+  }
+
+  .login-card {
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .login-card h1 {
     font-size: 18px;
   }
 
-  .calendar-day {
-    min-height: 45px;
+  .login-card h2 {
+    font-size: 13px;
+  }
+
+  .dashboard-container {
+    padding: 8px;
+    max-width: 100%;
+  }
+
+  .dashboard-header {
+    padding: 8px;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 18px;
+  }
+
+  .dashboard-header p {
     font-size: 11px;
   }
 
-  .day-number {
-    font-size: 12px;
+  .dashboard-content {
+    gap: 12px;
   }
 
-  .booked-indicator {
-    font-size: 16px;
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
-  .items-container {
-    padding: 12px;
+  .stat-card {
+    padding: 10px;
   }
 
-  .items-management {
-    padding: 12px;
-  }
-
-  .table-row {
-    padding: 8px;
+  .stat-card h3 {
+    font-size: 11px;
     margin-bottom: 6px;
   }
 
-  .rate-input {
-    padding: 4px;
+  .stat-number {
+    font-size: 20px;
+  }
+
+  .action-buttons {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .action-buttons button {
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    width: 100%;
+    border-radius: 4px;
+  }
+
+  .section {
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+
+  .section h2 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .bills-list {
+    gap: 6px;
+  }
+
+  .bill-list-item {
+    padding: 6px;
+    margin-bottom: 4px;
+  }
+
+  .bill-list-header h4 {
+    font-size: 11px;
+  }
+
+  .bill-form {
+    padding: 10px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 6px;
     font-size: 12px;
+  }
+
+  .qty-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  .qty-input {
+    width: 35px;
+    padding: 2px;
+    font-size: 11px;
+  }
+
+  .bill-total {
+    padding: 10px;
+  }
+
+  .bill-total h3 {
+    font-size: 14px;
+  }
+
+  .page-header {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 16px;
+  }
+
+  .bills-container {
+    padding: 8px;
+  }
+
+  .bills-list-section {
+    padding: 10px;
+  }
+
+  .bill-details-section {
+    padding: 10px;
+  }
+
+  .bill-details-card h2 {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .detail-row {
+    padding: 3px 0;
+    font-size: 11px;
+  }
+
+  .calendar-container {
+    padding: 8px;
+  }
+
+  .calendar-card {
+    padding: 12px;
+  }
+
+  .calendar-header h2 {
+    font-size: 16px;
+  }
+
+  .calendar-day {
+    min-height: 40px;
+    font-size: 10px;
+  }
+
+  .day-number {
+    font-size: 11px;
+  }
+
+  .booked-indicator {
+    font-size: 14px;
+  }
+
+  .items-container {
+    padding: 8px;
+  }
+
+  .items-management {
+    padding: 10px;
+  }
+
+  .items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+  }
+
+  .item-name {
+    font-size: 10px;
+  }
+
+  .item-rate {
+    font-size: 11px;
   }
 
   .btn-primary,
   .btn-secondary {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
   }
 
   .btn-approve,
   .btn-reject {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 6px 10px;
+    font-size: 11px;
   }
 
   .action-buttons {
-    gap: 8px;
+    gap: 6px;
   }
 
   .action-buttons button {
-    padding: 8px 10px;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .form-section {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .form-section h2 {
+    font-size: 13px;
+  }
+
+  .create-bill-container {
+    padding: 8px;
+  }
+
+  .table-header,
+  .table-row {
+    padding: 8px;
+  }
+
+  .rate-input {
+    padding: 3px;
     font-size: 11px;
+  }
+
+  .login-card button {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .home-buttons {
+    gap: 10px;
+  }
+
+  .home-info {
+    padding: 12px;
+  }
+
+  .home-info h3 {
+    font-size: 12px;
+  }
+
+  .home-info ol {
+    font-size: 11px;
+    line-height: 1.6;
   }
 }
