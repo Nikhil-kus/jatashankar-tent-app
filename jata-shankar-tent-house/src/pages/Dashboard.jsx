@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [showQuickBill, setShowQuickBill] = useState(false);
   const [showDetailedBill, setShowDetailedBill] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null); // Add selected bill state
+  const [showMenu, setShowMenu] = useState(false); // Add menu state
   const [quickBillData, setQuickBillData] = useState({
     customerName: '',
     date: '',
@@ -51,13 +52,140 @@ export default function Dashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate('/login');
-    } catch (err) {
-      setError('Logout failed');
+  // Share bill via WhatsApp (same as Bills.jsx)
+  const handleShareWhatsAppDashboard = (bill) => {
+    if (!bill) return;
+
+    // Create HTML content for the bill
+    const billHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Bill - ${bill.customerName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2196f3; padding-bottom: 15px; }
+          .header h1 { margin: 0; color: #2196f3; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background-color: #f5f5f5; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+          td { padding: 10px; border: 1px solid #ddd; }
+          .total-row { background-color: #f0f0f0; font-weight: bold; }
+          .summary { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #2196f3; }
+          .summary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>JATA SHANKAR TENT HOUSE</h1>
+          <p>Bill Details</p>
+        </div>
+        <p><strong>Customer:</strong> ${bill.customerName}</p>
+        <p><strong>Date:</strong> ${bill.date}</p>
+        <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
+        <table>
+          <thead>
+            <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            ${bill.items.map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
+            <tr class="total-row"><td colspan="3">Total Items: ${bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
+          </tbody>
+        </table>
+        <div class="summary">
+          <div class="summary-row"><span>Total Amount:</span><span>₹${bill.total}</span></div>
+          ${bill.receivedAmount ? `<div class="summary-row"><span>Received:</span><span>₹${bill.receivedAmount}</span></div><div class="summary-row"><span>Balance:</span><span>₹${bill.total - bill.receivedAmount}</span></div>` : ''}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([billHTML], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const fileName = `Bill_${bill.customerName}_${bill.date}.html`;
+    
+    const whatsappMessage = `*JATA SHANKAR TENT HOUSE - BILL*\n\n*Customer:* ${bill.customerName}\n*Date:* ${bill.date}\n*Total:* ₹${bill.total}\n${bill.receivedAmount ? `*Received:* ₹${bill.receivedAmount}\n*Balance:* ₹${bill.total - bill.receivedAmount}` : ''}\n\n📎 Bill attached`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: `Bill - ${bill.customerName}`,
+        text: whatsappMessage,
+        files: [new File([blob], fileName, { type: 'text/html' })]
+      }).catch(err => {
+        const encodedMessage = encodeURIComponent(whatsappMessage);
+        window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+      });
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      const encodedMessage = encodeURIComponent(whatsappMessage);
+      window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+      
+      window.URL.revokeObjectURL(url);
     }
+  };
+
+  // Download bill as HTML
+  const handleDownloadBillDashboard = (bill) => {
+    if (!bill) return;
+
+    const billHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Bill - ${bill.customerName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2196f3; padding-bottom: 15px; }
+          .header h1 { margin: 0; color: #2196f3; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background-color: #f5f5f5; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+          td { padding: 10px; border: 1px solid #ddd; }
+          .total-row { background-color: #f0f0f0; font-weight: bold; }
+          .summary { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #2196f3; }
+          .summary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>JATA SHANKAR TENT HOUSE</h1>
+          <p>Bill Details</p>
+        </div>
+        <p><strong>Customer:</strong> ${bill.customerName}</p>
+        <p><strong>Date:</strong> ${bill.date}</p>
+        <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
+        <table>
+          <thead>
+            <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
+          </thead>
+          <tbody>
+            ${bill.items.map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
+            <tr class="total-row"><td colspan="3">Total Items: ${bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
+          </tbody>
+        </table>
+        <div class="summary">
+          <div class="summary-row"><span>Total Amount:</span><span>₹${bill.total}</span></div>
+          ${bill.receivedAmount ? `<div class="summary-row"><span>Received:</span><span>₹${bill.receivedAmount}</span></div><div class="summary-row"><span>Balance:</span><span>₹${bill.total - bill.receivedAmount}</span></div>` : ''}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([billHTML], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Bill_${bill.customerName}_${bill.date}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   // Handle quick bill creation
@@ -236,6 +364,15 @@ export default function Dashboard() {
     return detailedBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      navigate('/');
+    } catch (err) {
+      setError('Failed to logout: ' + err.message);
+    }
+  };
+
   const pendingBills = bills.filter(b => b.status === 'pending');
   const approvedBills = bills.filter(b => b.status === 'approved');
   const todayBookings = bookings.filter(b => b.date === new Date().toISOString().split('T')[0]);
@@ -294,7 +431,194 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="loading">Loading...</div>
+      ) : selectedBill ? (
+        // ONLY SHOW BILL DETAILS WHEN A BILL IS SELECTED
+        <div className="dashboard-content">
+          <div className="section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0 }}>Bill Details</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => handleDownloadBillDashboard(selectedBill)}
+                  className="btn-primary"
+                  style={{ background: '#2196f3', padding: '8px 16px', fontSize: '13px' }}
+                >
+                  ⬇ Download
+                </button>
+                <button
+                  onClick={() => handleShareWhatsAppDashboard(selectedBill)}
+                  className="btn-primary"
+                  style={{ background: '#25D366', padding: '8px 16px', fontSize: '13px' }}
+                >
+                  💬 Share
+                </button>
+                <button
+                  onClick={() => setSelectedBill(null)}
+                  style={{
+                    background: '#9e9e9e',
+                    color: 'white',
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '13px'
+                  }}
+                >
+                  ← Back
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                <strong>Customer Name:</strong> {selectedBill.customerName}
+              </p>
+              <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                <strong>Event Date:</strong> {selectedBill.date}
+              </p>
+              <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                <strong>Status:</strong> <span style={{ color: selectedBill.status === 'pending' ? '#f44336' : selectedBill.status === 'approved' ? '#4caf50' : '#ff9800' }}>
+                  {selectedBill.status.toUpperCase()}
+                </span>
+              </p>
+            </div>
+
+            {selectedBill.items && selectedBill.items.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Items Details</h3>
+                <div style={{ border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                    gap: '12px',
+                    padding: '12px',
+                    background: '#f5f5f5',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    borderBottom: '2px solid #ddd'
+                  }}>
+                    <div>Item Name</div>
+                    <div style={{ textAlign: 'center' }}>Qty</div>
+                    <div style={{ textAlign: 'center' }}>Rate</div>
+                    <div style={{ textAlign: 'right' }}>Amount</div>
+                  </div>
+
+                  {selectedBill.items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                        gap: '12px',
+                        padding: '12px',
+                        borderBottom: '1px solid #eee',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <div>{item.name}</div>
+                      <div style={{ textAlign: 'center' }}>{item.quantity}</div>
+                      <div style={{ textAlign: 'center' }}>₹{item.rate}</div>
+                      <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
+                        ₹{item.rate * item.quantity}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                    gap: '12px',
+                    padding: '12px',
+                    background: '#f0f0f0',
+                    fontWeight: 'bold',
+                    fontSize: '13px',
+                    borderTop: '2px solid #ddd'
+                  }}>
+                    <div>Total Items: {selectedBill.items.reduce((sum, item) => sum + item.quantity, 0)}</div>
+                    <div></div>
+                    <div></div>
+                    <div style={{ textAlign: 'right', color: '#2196f3' }}>
+                      ₹{selectedBill.total}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{
+              background: '#e3f2fd',
+              padding: '16px',
+              borderRadius: '6px',
+              textAlign: 'right'
+            }}>
+              <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#1976d2' }}>
+                Total Amount: ₹{selectedBill.total}
+              </h3>
+            </div>
+
+            {selectedBill.receivedAmount && (
+              <div style={{
+                background: '#e8f5e9',
+                padding: '16px',
+                borderRadius: '6px',
+                marginTop: '16px',
+                border: '2px solid #4caf50'
+              }}>
+                <h3 style={{ marginBottom: '12px', fontSize: '14px', color: '#2e7d32' }}>
+                  Payment Details
+                </h3>
+                <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                  <strong>Total Amount:</strong> ₹{selectedBill.total}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                  <strong>Received Amount:</strong> ₹{selectedBill.receivedAmount}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                  <strong>Balance:</strong> <span style={{ color: selectedBill.total - selectedBill.receivedAmount > 0 ? '#f44336' : '#4caf50' }}>
+                    ₹{selectedBill.total - selectedBill.receivedAmount}
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {selectedBill.serviceTypes && selectedBill.serviceTypes.length > 0 && (
+              <div style={{
+                background: '#f3e5f5',
+                padding: '16px',
+                borderRadius: '6px',
+                marginTop: '16px',
+                border: '2px solid #9c27b0'
+              }}>
+                <h3 style={{ marginBottom: '12px', fontSize: '14px', color: '#6a1b9a' }}>
+                  Service Types
+                </h3>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  {selectedBill.serviceTypes.map((service, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        background: '#9c27b0',
+                        color: 'white',
+                        padding: '8px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       ) : (
+        // SHOW DASHBOARD CONTENT WHEN NO BILL IS SELECTED
         <div className="dashboard-content">
           {/* Stats Cards */}
           <div className="stats-grid">
@@ -333,30 +657,684 @@ export default function Dashboard() {
               {showQuickBill ? 'Cancel Quick Bill' : '+ Quick Bill'}
             </button>
             <button 
-              onClick={() => navigate('/bills')} 
-              className="btn-primary"
-              style={{ background: '#3B82F6', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)', padding: '8px 14px', fontSize: '13px' }}
-            >
-              View All Bills
-            </button>
-            <button 
               onClick={() => navigate('/calendar')} 
               className="btn-primary"
               style={{ background: '#8B5CF6', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)', padding: '8px 14px', fontSize: '13px' }}
             >
               View Calendar
             </button>
-            <button 
-              onClick={() => navigate('/items')} 
-              className="btn-primary"
-              style={{ background: '#EC4899', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)', padding: '8px 14px', fontSize: '13px' }}
-            >
-              Manage Items & Prices
-            </button>
+            {/* 3-Dot Menu */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowMenu(!showMenu)} 
+                className="btn-primary"
+                style={{ background: '#6B7280', boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)', padding: '8px 14px', fontSize: '13px' }}
+              >
+                ⋮ Menu
+              </button>
+              {showMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  zIndex: 1000,
+                  minWidth: '200px',
+                  marginTop: '4px'
+                }}>
+                  <button
+                    onClick={() => {
+                      navigate('/bills');
+                      setShowMenu(false);
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: 'none',
+                      background: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      borderBottom: '1px solid #eee'
+                    }}
+                  >
+                    📋 View All Bills
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/items');
+                      setShowMenu(false);
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: 'none',
+                      background: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    🏷️ Manage Items & Prices
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Detailed Bill Form */}
           {showDetailedBill && (
+            <div style={{
+              background: '#e8f5e9',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '2px solid #4caf50',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ marginTop: '0', marginBottom: '16px', color: '#2e7d32' }}>
+                Detailed Bill Creation
+              </h2>
+              <form onSubmit={handleCreateDetailedBill}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Customer Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={detailedBillData.customerName}
+                      onChange={(e) => setDetailedBillData({ ...detailedBillData, customerName: e.target.value })}
+                      placeholder="Enter customer name"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Event Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={detailedBillData.date}
+                      onChange={(e) => setDetailedBillData({ ...detailedBillData, date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Items Selection */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Select Items *
+                  </label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                    gap: '8px'
+                  }}>
+                    {availableItems.map(item => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => addItemToDetailedBill(item)}
+                        style={{
+                          padding: '10px',
+                          background: '#f0f0f0',
+                          border: '2px solid #ddd',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          textAlign: 'center'
+                        }}
+                      >
+                        <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '4px' }}>
+                          {item.name}
+                        </div>
+                        <div style={{ color: '#4caf50', fontWeight: 'bold', fontSize: '13px' }}>
+                          ₹{item.rate}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selected Items */}
+                {detailedBillData.items.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <h3 style={{ marginBottom: '12px', fontSize: '14px' }}>Selected Items</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {detailedBillData.items.map(item => (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px',
+                            background: '#f9f9f9',
+                            borderRadius: '6px',
+                            borderLeft: '4px solid #4caf50'
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 4px 0', fontSize: '13px' }}>{item.name}</h4>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#666' }}>
+                              ₹{item.rate} × {item.quantity} = ₹{item.rate * item.quantity}
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => updateDetailedBillItemQty(item.id, item.quantity - 1)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                padding: '0',
+                                background: '#e0e0e0',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '16px'
+                              }}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateDetailedBillItemQty(item.id, parseInt(e.target.value) || 1)}
+                              min="1"
+                              style={{
+                                width: '50px',
+                                padding: '4px',
+                                textAlign: 'center',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px'
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateDetailedBillItemQty(item.id, item.quantity + 1)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                padding: '0',
+                                background: '#e0e0e0',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '16px'
+                              }}
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeDetailedBillItem(item.id)}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#ff9800',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Total */}
+                {detailedBillData.items.length > 0 && (
+                  <div style={{
+                    background: 'white',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    marginBottom: '16px',
+                    textAlign: 'right'
+                  }}>
+                    <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#4caf50' }}>
+                      Total: ₹{calculateDetailedBillTotal()}
+                    </h3>
+                  </div>
+                )}
+
+                {/* Buttons */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    disabled={creatingBill || detailedBillData.items.length === 0}
+                    className="btn-primary"
+                    style={{ flex: 1, background: '#4caf50' }}
+                  >
+                    {creatingBill ? 'Creating...' : 'Create Detailed Bill'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowDetailedBill(false);
+                      setDetailedBillData({ customerName: '', date: '', items: [] });
+                    }}
+                    className="btn-cancel"
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Quick Bill Form */}
+          {showQuickBill && (
+            <div style={{
+              background: '#FEF3C7',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '2px solid #F59E0B',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ marginTop: '0', marginBottom: '16px', color: '#D97706' }}>
+                Quick Bill Creation
+              </h2>
+              <form onSubmit={handleCreateQuickBill}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Customer Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={quickBillData.customerName}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, customerName: e.target.value })}
+                      placeholder="Enter customer name"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Event Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={quickBillData.date}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, date: e.target.value })}
+                      min={new Date().toISOString().split('T')[0]}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Total Amount (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      value={quickBillData.totalAmount}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, totalAmount: e.target.value })}
+                      placeholder="Enter total amount"
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Received Amount (₹) (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      value={quickBillData.receivedAmount}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, receivedAmount: e.target.value })}
+                      placeholder="Enter received amount"
+                      step="0.01"
+                      min="0"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Service Types Selection */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Select Service Types * (Choose one or more)
+                  </label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                    gap: '8px'
+                  }}>
+                    {['Tent', 'Palace', 'DJ', 'Roadlight'].map(service => (
+                      <label
+                        key={service}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '10px',
+                          background: quickBillData.serviceTypes.includes(service) ? '#fff9c4' : '#f5f5f5',
+                          border: quickBillData.serviceTypes.includes(service) ? '2px solid #fbc02d' : '2px solid #ddd',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={quickBillData.serviceTypes.includes(service)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setQuickBillData({
+                                ...quickBillData,
+                                serviceTypes: [...quickBillData.serviceTypes, service]
+                              });
+                            } else {
+                              setQuickBillData({
+                                ...quickBillData,
+                                serviceTypes: quickBillData.serviceTypes.filter(s => s !== service)
+                              });
+                            }
+                          }}
+                          style={{ marginRight: '6px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: '14px', fontWeight: '500' }}>{service}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {quickBillData.totalAmount && (
+                  <div style={{
+                    background: 'white',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Total Amount</p>
+                      <p style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: '#2196f3' }}>
+                        ₹{quickBillData.totalAmount}
+                      </p>
+                    </div>
+                    {quickBillData.receivedAmount && (
+                      <>
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Received</p>
+                          <p style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#4caf50' }}>
+                            ₹{quickBillData.receivedAmount}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Balance</p>
+                          <p style={{ 
+                            margin: '0', 
+                            fontSize: '16px', 
+                            fontWeight: 'bold', 
+                            color: parseFloat(quickBillData.totalAmount) - parseFloat(quickBillData.receivedAmount) > 0 ? '#f44336' : '#4caf50'
+                          }}>
+                            ₹{parseFloat(quickBillData.totalAmount) - parseFloat(quickBillData.receivedAmount || 0)}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="submit"
+                    disabled={creatingBill}
+                    className="btn-primary"
+                    style={{ flex: 1, background: '#F59E0B' }}
+                  >
+                    {creatingBill ? 'Creating...' : 'Create Quick Bill'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowQuickBill(false);
+                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: [] });
+                    }}
+                    className="btn-cancel"
+                    style={{ flex: 1 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* All Bills - Show list when no bill is selected */}
+          {bills.length > 0 && (
+            <div className="section">
+              <h2>All Bills ({bills.length})</h2>
+              <div className="bills-list">
+                {sortedBillsForDashboard().slice(0, 5).map(bill => {
+                  // Format date to show day and month clearly
+                  const dateObj = new Date(bill.date + 'T00:00:00');
+                  const day = dateObj.getDate();
+                  const month = dateObj.toLocaleString('en-US', { month: 'short' });
+                  
+                  // Check if this is today's or nearest upcoming event (only for approved bills)
+                  const today = new Date().toISOString().split('T')[0];
+                  const isNearest = bill.status === 'approved' && (bill.date === today || 
+                    (bill.date > today && !sortedBillsForDashboard().some(b => b.status === 'approved' && b.date > today && b.date < bill.date)));
+                  
+                  return (
+                    <div
+                      key={bill.id}
+                      onClick={() => setSelectedBill(bill)}
+                      className="bill-list-item"
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px',
+                        background: isNearest ? '#fffde7' : bill.status === 'pending' ? '#FFEBEE' : '#f9f9f9',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        borderLeft: isNearest ? '4px solid #fbc02d' : bill.status === 'pending' ? '4px solid #f44336' : '4px solid #ddd',
+                        marginBottom: '8px',
+                        boxShadow: isNearest ? '0 2px 8px rgba(251, 192, 45, 0.3)' : 'none'
+                      }}
+                    >
+                      {/* Left Side - Name and Date */}
+                      <div style={{ flex: 1 }}>
+                        <div className="bill-list-header">
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>
+                            {bill.customerName}
+                            {isNearest && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#fbc02d', fontWeight: 'bold' }}>● NEAREST</span>}
+                          </h4>
+                          <span
+                            className="status-badge"
+                            style={{ 
+                              backgroundColor: bill.status === 'pending' ? '#f44336' : bill.status === 'approved' ? '#4caf50' : '#ff9800',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              color: 'white',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {bill.status}
+                          </span>
+                        </div>
+                        {/* Date - Clear Format */}
+                        <div style={{
+                          marginTop: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <div style={{
+                            background: isNearest ? '#fbc02d' : '#2196f3',
+                            color: isNearest ? '#333' : 'white',
+                            padding: '6px 10px',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                            minWidth: '50px'
+                          }}>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                              {day}
+                            </div>
+                            <div style={{ fontSize: '11px' }}>
+                              {month}
+                            </div>
+                          </div>
+                          <span style={{ color: '#666', fontSize: '13px' }}>
+                            {bill.date}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right Side - Total and Received */}
+                      <div style={{
+                        textAlign: 'right',
+                        minWidth: '150px',
+                        paddingLeft: '16px'
+                      }}>
+                        <div style={{ marginBottom: '8px' }}>
+                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
+                            Total
+                          </p>
+                          <p style={{ 
+                            margin: '0',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            color: '#2196f3'
+                          }}>
+                            ₹{bill.total}
+                          </p>
+                        </div>
+                        {bill.receivedAmount && (
+                          <div>
+                            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
+                              Received
+                            </p>
+                            <p style={{ 
+                              margin: '0',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              color: '#4caf50'
+                            }}>
+                              ₹{bill.receivedAmount}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {/* Service Types Below */}
+                        {bill.serviceTypes && bill.serviceTypes.length > 0 && (
+                          <div style={{
+                            marginTop: '12px',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '6px',
+                            justifyContent: 'flex-end'
+                          }}>
+                            {bill.serviceTypes.map((service, idx) => {
+                              // Different colors for each service type
+                              const serviceColors = {
+                                'Tent': { bg: '#FF6B6B', text: 'white' },
+                                'Palace': { bg: '#4ECDC4', text: 'white' },
+                                'DJ': { bg: '#FFD93D', text: '#333' },
+                                'Roadlight': { bg: '#6C5CE7', text: 'white' }
+                              };
+                              const colors = serviceColors[service] || { bg: '#95E1D3', text: 'white' };
+                              
+                              return (
+                                <span
+                                  key={idx}
+                                  style={{
+                                    background: colors.bg,
+                                    color: colors.text,
+                                    padding: '6px 12px',
+                                    borderRadius: '16px',
+                                    fontSize: '12px',
+                                    fontWeight: 'bold',
+                                    whiteSpace: 'nowrap',
+                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                >
+                                  {service}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
             <div style={{
               background: '#e8f5e9',
               padding: '20px',
@@ -959,8 +1937,194 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Selected Bill Details */}
+          {/* Selected Bill Details - ONLY show this when bill is selected */}
           {selectedBill && (
+            <div className="section">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 style={{ margin: 0 }}>Bill Details</h2>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleDownloadBillDashboard(selectedBill)}
+                    className="btn-primary"
+                    style={{ background: '#2196f3', padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    ⬇ Download
+                  </button>
+                  <button
+                    onClick={() => handleShareWhatsAppDashboard(selectedBill)}
+                    className="btn-primary"
+                    style={{ background: '#25D366', padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    💬 Share
+                  </button>
+                  <button
+                    onClick={() => setSelectedBill(null)}
+                    style={{
+                      background: '#9e9e9e',
+                      color: 'white',
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '13px'
+                    }}
+                  >
+                    ← Back
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                  <strong>Customer Name:</strong> {selectedBill.customerName}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                  <strong>Event Date:</strong> {selectedBill.date}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                  <strong>Status:</strong> <span style={{ color: selectedBill.status === 'pending' ? '#f44336' : selectedBill.status === 'approved' ? '#4caf50' : '#ff9800' }}>
+                    {selectedBill.status.toUpperCase()}
+                  </span>
+                </p>
+              </div>
+
+              {selectedBill.items && selectedBill.items.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Items Details</h3>
+                  <div style={{ border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                      gap: '12px',
+                      padding: '12px',
+                      background: '#f5f5f5',
+                      fontWeight: 'bold',
+                      fontSize: '12px',
+                      borderBottom: '2px solid #ddd'
+                    }}>
+                      <div>Item Name</div>
+                      <div style={{ textAlign: 'center' }}>Qty</div>
+                      <div style={{ textAlign: 'center' }}>Rate</div>
+                      <div style={{ textAlign: 'right' }}>Amount</div>
+                    </div>
+
+                    {selectedBill.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                          gap: '12px',
+                          padding: '12px',
+                          borderBottom: '1px solid #eee',
+                          fontSize: '13px'
+                        }}
+                      >
+                        <div>{item.name}</div>
+                        <div style={{ textAlign: 'center' }}>{item.quantity}</div>
+                        <div style={{ textAlign: 'center' }}>₹{item.rate}</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
+                          ₹{item.rate * item.quantity}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                      gap: '12px',
+                      padding: '12px',
+                      background: '#f0f0f0',
+                      fontWeight: 'bold',
+                      fontSize: '13px',
+                      borderTop: '2px solid #ddd'
+                    }}>
+                      <div>Total Items: {selectedBill.items.reduce((sum, item) => sum + item.quantity, 0)}</div>
+                      <div></div>
+                      <div></div>
+                      <div style={{ textAlign: 'right', color: '#2196f3' }}>
+                        ₹{selectedBill.total}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{
+                background: '#e3f2fd',
+                padding: '16px',
+                borderRadius: '6px',
+                textAlign: 'right'
+              }}>
+                <h3 style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#1976d2' }}>
+                  Total Amount: ₹{selectedBill.total}
+                </h3>
+              </div>
+
+              {selectedBill.receivedAmount && (
+                <div style={{
+                  background: '#e8f5e9',
+                  padding: '16px',
+                  borderRadius: '6px',
+                  marginTop: '16px',
+                  border: '2px solid #4caf50'
+                }}>
+                  <h3 style={{ marginBottom: '12px', fontSize: '14px', color: '#2e7d32' }}>
+                    Payment Details
+                  </h3>
+                  <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                    <strong>Total Amount:</strong> ₹{selectedBill.total}
+                  </p>
+                  <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                    <strong>Received Amount:</strong> ₹{selectedBill.receivedAmount}
+                  </p>
+                  <p style={{ margin: '8px 0', fontSize: '13px' }}>
+                    <strong>Balance:</strong> <span style={{ color: selectedBill.total - selectedBill.receivedAmount > 0 ? '#f44336' : '#4caf50' }}>
+                      ₹{selectedBill.total - selectedBill.receivedAmount}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {selectedBill.serviceTypes && selectedBill.serviceTypes.length > 0 && (
+                <div style={{
+                  background: '#f3e5f5',
+                  padding: '16px',
+                  borderRadius: '6px',
+                  marginTop: '16px',
+                  border: '2px solid #9c27b0'
+                }}>
+                  <h3 style={{ marginBottom: '12px', fontSize: '14px', color: '#6a1b9a' }}>
+                    Service Types
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    {selectedBill.serviceTypes.map((service, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          background: '#9c27b0',
+                          color: 'white',
+                          padding: '8px 12px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Show dashboard content ONLY when no bill is selected */}
+          {!selectedBill && (
             <div className="section">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 style={{ margin: 0 }}>Bill Details</h2>

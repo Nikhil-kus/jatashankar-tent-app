@@ -647,6 +647,9 @@ button {
 }
 
 .bill-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px;
   background-color: #f9f9f9;
   border-radius: 6px;
@@ -1102,8 +1105,7 @@ button {
 
   .bill-list-item {
     padding: 8px;
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 6px;
   }
 
   .bill-list-header {
@@ -1234,6 +1236,7 @@ button {
   .bill-list-item {
     padding: 6px;
     margin-bottom: 4px;
+    gap: 4px;
   }
 
   .bill-list-header h4 {
