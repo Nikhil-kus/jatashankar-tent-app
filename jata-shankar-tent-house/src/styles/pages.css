@@ -605,32 +605,56 @@ button {
 
   .bill-card {
     flex-direction: column;
+    height: auto !important;
+    overflow: visible !important;
   }
 
-  .bill-card-left {
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .bill-card-middle {
+  /* Reset borders and widths for stacked layout */
+  .bill-card-left,
+  .bill-card-middle,
+  .bill-card-right {
+    width: 100%;
     border-left: none;
+    border-right: none;
     border-bottom: 1px solid #f0f0f0;
     padding: 12px;
   }
 
+  .bill-card-left {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .bill-card-middle {
+    flex: auto;
+    align-items: stretch;
+  }
+
   .bill-card-right {
-    border-left: none;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    background: #fff;
+    border-bottom: none;
+    background: #FAFAFA;
+    min-width: auto;
   }
 
   .amount-group {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
   }
 
   .status-badge {
     margin-left: 0 !important;
+    order: -1;
+    /* Show status on the left in the footer on mobile if needed, or keep standard */
+  }
+
+  .tags-row {
+    justify-content: flex-start;
   }
 }
 

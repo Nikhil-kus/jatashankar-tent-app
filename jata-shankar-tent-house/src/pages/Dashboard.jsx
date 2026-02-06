@@ -59,6 +59,50 @@ export default function Dashboard() {
     }
   };
 
+  // Handle browser back button
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // Logic to close modals when back button is pressed
+      // We check if we should close any open modal
+      if (selectedBill || showQuickBill || showDetailedBill) {
+        setSelectedBill(null);
+        setShowQuickBill(false);
+        setShowDetailedBill(false);
+        setShowMenu(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [selectedBill, showQuickBill, showDetailedBill]);
+
+  // Helper to open modal with history push
+  const openModal = (type, data = null) => {
+    // Push state so back button works
+    window.history.pushState({ modal: type }, '');
+
+    if (type === 'bill_details') {
+      setSelectedBill(data);
+    } else if (type === 'quick_bill') {
+      setShowQuickBill(true);
+    } else if (type === 'detailed_bill') {
+      setShowDetailedBill(true);
+    }
+  };
+
+  // Helper to close modal (triggers back)
+  const closeModal = () => {
+    window.history.back();
+    // State clearing will happen in popstate listener, 
+    // BUT to feel responsive we can also clear immediately if needed,
+    // however, let's rely on the popstate listener for consistent logic 
+    // OR trigger the state change manually if we want to be safe against double-backs.
+    // Actually, safest is: user clicks close -> history.back() -> popstate fires -> cleanup.
+  };
+
   // Share bill via WhatsApp (same as Bills.jsx)
   const handleShareWhatsAppDashboard = (bill) => {
     if (!bill) return;
@@ -540,7 +584,7 @@ export default function Dashboard() {
                   💬 Share
                 </button>
                 <button
-                  onClick={() => setSelectedBill(null)}
+                  onClick={closeModal}
                   style={{
                     background: '#9e9e9e',
                     color: 'white',
@@ -837,14 +881,14 @@ export default function Dashboard() {
           {/* Action Buttons */}
           <div className="action-buttons">
             <button
-              onClick={() => setShowDetailedBill(!showDetailedBill)}
+              onClick={() => showDetailedBill ? closeModal() : openModal('detailed_bill')}
               className="btn-primary"
               style={{ background: '#10B981', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', padding: '8px 14px', fontSize: '13px' }}
             >
               {showDetailedBill ? 'Cancel Detailed Bill' : '+ Detailed Bill'}
             </button>
             <button
-              onClick={() => setShowQuickBill(!showQuickBill)}
+              onClick={() => showQuickBill ? closeModal() : openModal('quick_bill')}
               className="btn-primary"
               style={{ background: '#F59E0B', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)', padding: '8px 14px', fontSize: '13px' }}
             >
@@ -1153,7 +1197,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => {
-                      setShowDetailedBill(false);
+                      closeModal();
                       setDetailedBillData({ customerName: '', date: '', items: [] });
                     }}
                     className="btn-cancel"
@@ -1386,7 +1430,7 @@ export default function Dashboard() {
                   <button
                     type="button"
                     onClick={() => {
-                      setShowQuickBill(false);
+                      closeModal();
                       setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: [] });
                     }}
                     className="btn-cancel"
@@ -1418,7 +1462,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={bill.id}
-                      onClick={() => setSelectedBill(bill)}
+                      onClick={() => openModal('bill_details', bill)}
                       className={`bill-card ${isNearest ? 'nearest' : bill.status}`}
                     >
                       {/* Left Side - Info */}
@@ -1523,7 +1567,8 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
