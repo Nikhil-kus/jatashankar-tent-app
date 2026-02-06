@@ -1482,37 +1482,10 @@ export default function Dashboard() {
                       </div>
 
                       {/* Middle Side - Services & Actions */}
-                      <div className="bill-card-middle">
-                        <div className="services-container">
-                          {bill.serviceTypes && bill.serviceTypes.length > 0 && (
-                            <div className="tags-row">
-                              {bill.serviceTypes.map((service, idx) => {
-                                const serviceColors = {
-                                  'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
-                                  'Palace': { bg: '#E0F2F1', text: '#00695C' },
-                                  'DJ': { bg: '#PPP', text: '#333' },
-                                  'Roadlight': { bg: '#EDE7F6', text: '#512DA8' }
-                                };
-                                const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
 
-                                return (
-                                  <span
-                                    key={idx}
-                                    className="service-tag"
-                                    style={{
-                                      backgroundColor: colors.bg,
-                                      color: colors.text
-                                    }}
-                                  >
-                                    {service}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
 
-                        {bill.status === 'pending' && (
+                      {bill.status === 'pending' && (
+                        <div className="bill-card-middle">
                           <div className="action-buttons-row" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleApproveBill(bill.id)}
@@ -1529,11 +1502,39 @@ export default function Dashboard() {
                               ✕ Reject
                             </button>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
                       {/* Right Side - Amounts & Status */}
                       <div className="bill-card-right">
+                        {/* Service Tags Moved Here */}
+                        <div className="services-container" style={{ marginBottom: 0, marginRight: 'auto' }}>
+                          {bill.serviceTypes && bill.serviceTypes.length > 0 && (
+                            <div className="tags-row">
+                              {bill.serviceTypes.map((service, idx) => {
+                                const serviceColors = {
+                                  'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
+                                  'Palace': { bg: '#E0F2F1', text: '#00695C' },
+                                  'DJ': { bg: '#EEE', text: '#333' },
+                                  'Roadlight': { bg: '#EDE7F6', text: '#512DA8' }
+                                };
+                                const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
+                                return (
+                                  <span
+                                    key={idx}
+                                    className="service-tag"
+                                    style={{
+                                      backgroundColor: colors.bg,
+                                      color: colors.text
+                                    }}
+                                  >
+                                    {service}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                         <div>
                           <span className={`status-badge`} style={{
                             backgroundColor: bill.status === 'pending' ? '#FF5252' : bill.status === 'approved' ? '#4CAF50' : '#FF9800',

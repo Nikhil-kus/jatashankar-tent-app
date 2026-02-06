@@ -958,8 +958,10 @@ button {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  margin-top: 12px;
+  justify-content: flex-start;
+  /* Default to left alignment for moved tags */
+  margin-top: 4px;
+  /* Reduced from 12px */
 }
 
 .service-tag {
