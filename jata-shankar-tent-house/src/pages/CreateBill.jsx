@@ -5,6 +5,7 @@ import '../styles/pages.css';
 
 export default function CreateBill() {
   const [customerName, setCustomerName] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [date, setDate] = useState('');
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -91,7 +92,7 @@ export default function CreateBill() {
   // Submit bill
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!customerName.trim()) {
       setError('Please enter customer name');
       return;
@@ -115,6 +116,7 @@ export default function CreateBill() {
 
       const billData = {
         customerName: customerName.trim(),
+        mobileNumber: mobileNumber.trim(),
         date,
         items: selectedItems.map(item => ({
           id: item.id,
@@ -126,7 +128,7 @@ export default function CreateBill() {
       };
 
       const billId = await createBill(billData);
-      
+
       // Show success and redirect
       alert('Bill created successfully! Waiting for owner approval.');
       navigate('/');
@@ -155,7 +157,7 @@ export default function CreateBill() {
         {/* Customer Details */}
         <section className="form-section">
           <h2>Customer Details</h2>
-          
+
           <div className="form-group">
             <label htmlFor="customerName">Customer Name *</label>
             <input
@@ -165,6 +167,18 @@ export default function CreateBill() {
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Enter customer name"
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="mobileNumber">Mobile Number</label>
+            <input
+              id="mobileNumber"
+              type="tel"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value)}
+              placeholder="Enter mobile number"
+              maxLength="10"
             />
           </div>
 
@@ -185,7 +199,7 @@ export default function CreateBill() {
         {/* Items Selection */}
         <section className="form-section">
           <h2>Select Items</h2>
-          
+
           {loading ? (
             <p>Loading items...</p>
           ) : items.length === 0 ? (
@@ -265,8 +279,8 @@ export default function CreateBill() {
         )}
 
         {/* Submit Button */}
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={submitting || selectedItems.length === 0}
           className="btn-primary btn-submit"
         >

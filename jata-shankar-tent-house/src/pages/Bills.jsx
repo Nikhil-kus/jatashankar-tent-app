@@ -19,7 +19,7 @@ export default function Bills() {
 
   useEffect(() => {
     fetchBills();
-    
+
     // If bill ID in URL, select it
     const billId = searchParams.get('id');
     if (billId) {
@@ -57,7 +57,7 @@ export default function Bills() {
     try {
       setUpdating(true);
       await updateBillStatus(billId, 'approved');
-      
+
       // Create booking
       const bill = bills.find(b => b.id === billId);
       await createBooking({
@@ -114,7 +114,7 @@ export default function Bills() {
       });
 
       setBills(bills.map(bill =>
-        bill.id === billId 
+        bill.id === billId
           ? { ...bill, receivedAmount: parseFloat(receivedAmount) }
           : bill
       ));
@@ -236,6 +236,7 @@ export default function Bills() {
           <div class="info-block">
             <label>Customer Name:</label>
             <value>${bill.customerName}</value>
+            ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
           </div>
           <div class="info-block">
             <label>Event Date:</label>
@@ -307,7 +308,7 @@ export default function Bills() {
     const blob = new Blob([billHTML], { type: 'text/html' });
     const url = window.URL.createObjectURL(blob);
     const fileName = `Bill_${bill.customerName}_${bill.date}.html`;
-    
+
     // Create WhatsApp message with file link
     const whatsappMessage = `
 *JATA SHANKAR TENT HOUSE - BILL*
@@ -331,7 +332,9 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
       }).catch(err => {
         // Fallback: Open WhatsApp with text message
         const encodedMessage = encodeURIComponent(whatsappMessage);
-        window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
+        const url = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
+        window.open(url, '_blank');
       });
     } else {
       // Desktop: Download and show WhatsApp message
@@ -341,11 +344,13 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Open WhatsApp with message
       const encodedMessage = encodeURIComponent(whatsappMessage);
-      window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
-      
+      const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
+      const waUrl = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
+      window.open(waUrl, '_blank');
+
       window.URL.revokeObjectURL(url);
     }
   };
@@ -458,6 +463,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
           <div class="info-block">
             <label>Customer Name:</label>
             <value>${bill.customerName}</value>
+             ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
           </div>
           <div class="info-block">
             <label>Event Date:</label>
@@ -543,7 +549,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
 
   // Sort bills by date and categorize
   const today = new Date().toISOString().split('T')[0];
-  
+
   const sortedAndCategorized = () => {
     const past = [];
     const upcoming = [];
@@ -561,7 +567,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
 
     // Sort past bills by date (newest first)
     past.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
+
     // Sort upcoming bills by date (nearest first)
     upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -642,12 +648,12 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                 const dateObj = new Date(bill.date + 'T00:00:00');
                 const day = dateObj.getDate();
                 const month = dateObj.toLocaleString('en-US', { month: 'short' });
-                
+
                 // Check if this is today's or nearest upcoming event
                 const today = new Date().toISOString().split('T')[0];
-                const isNearest = bill.date === today || 
+                const isNearest = bill.date === today ||
                   (bill.date > today && !sortedBills.some(b => b.date > today && b.date < bill.date));
-                
+
                 return (
                   <div
                     key={bill.id}
@@ -672,11 +678,14 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                       <div className="bill-list-header">
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '15px' }}>
                           {bill.customerName}
+                          <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal', marginLeft: '8px' }}>
+                            {bill.mobileNumber}
+                          </span>
                           {isNearest && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#fbc02d', fontWeight: 'bold' }}>● NEAREST</span>}
                         </h4>
                         <span
                           className="status-badge"
-                          style={{ 
+                          style={{
                             backgroundColor: getStatusColor(bill.status),
                             padding: '4px 8px',
                             borderRadius: '4px',
@@ -727,7 +736,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                         <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
                           Total
                         </p>
-                        <p style={{ 
+                        <p style={{
                           margin: '0',
                           fontSize: '16px',
                           fontWeight: 'bold',
@@ -741,7 +750,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                           <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
                             Received
                           </p>
-                          <p style={{ 
+                          <p style={{
                             margin: '0',
                             fontSize: '14px',
                             fontWeight: 'bold',
@@ -751,7 +760,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                           </p>
                         </div>
                       )}
-                      
+
                       {/* Service Types Below */}
                       {bill.serviceTypes && bill.serviceTypes.length > 0 && (
                         <div style={{
@@ -770,7 +779,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                               'Roadlight': { bg: '#6C5CE7', text: 'white' }
                             };
                             const colors = serviceColors[service] || { bg: '#95E1D3', text: 'white' };
-                            
+
                             return (
                               <span
                                 key={idx}
@@ -823,7 +832,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                   </button>
                 </div>
               </div>
-              
+
               <div className="detail-row">
                 <span className="label">Customer Name:</span>
                 <span className="value">{selectedBill.customerName}</span>
@@ -925,7 +934,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                   <h3 style={{ marginBottom: '12px', fontSize: '16px', color: '#2e7d32' }}>
                     Payment Details
                   </h3>
-                  
+
                   {!editingReceivedAmount ? (
                     <div>
                       <div className="detail-row" style={{ marginBottom: '12px' }}>
@@ -940,7 +949,7 @@ ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:
                       </div>
                       <div className="detail-row" style={{ marginBottom: '12px' }}>
                         <span className="label">Balance:</span>
-                        <span className="value" style={{ 
+                        <span className="value" style={{
                           color: calculateBalance(selectedBill) > 0 ? '#f44336' : '#4caf50',
                           fontWeight: 'bold'
                         }}>

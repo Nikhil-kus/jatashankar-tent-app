@@ -602,6 +602,36 @@ button {
   .bills-layout {
     grid-template-columns: 1fr;
   }
+
+  .bill-card {
+    flex-direction: column;
+  }
+
+  .bill-card-left {
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .bill-card-middle {
+    border-left: none;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px;
+  }
+
+  .bill-card-right {
+    border-left: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+  }
+
+  .amount-group {
+    text-align: right;
+  }
+
+  .status-badge {
+    margin-left: 0 !important;
+  }
 }
 
 .bills-list-section {
@@ -663,21 +693,258 @@ button {
   border-left-color: #2196f3;
 }
 
-.bill-list-item.active {
-  background-color: #e3f2fd;
-  border-left-color: #2196f3;
+.bill-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.bill-list-header {
+/* New Card Styles */
+.bill-card {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
+  align-items: stretch;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  position: relative;
 }
 
-.bill-list-header h4 {
+.bill-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1;
+}
+
+.bill-card.pending {
+  border-left: 5px solid #FF5252;
+}
+
+.bill-card.approved {
+  border-left: 5px solid #4CAF50;
+}
+
+.bill-card.nearest {
+  background: linear-gradient(to right, #FFFDE7, #FFFFFF);
+  border: 1px solid #FBC02D;
+  border-left: 5px solid #FBC02D;
+}
+
+/* Left Section: Date & Info */
+.bill-card-left {
+  padding: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bill-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.customer-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
   margin: 0;
+  text-transform: capitalize;
+}
+
+.nearest-badge {
+  background: #FFF9C4;
+  color: #F57F17;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  border: 1px solid #FBC02D;
+}
+
+.date-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.date-box {
+  background: #E3F2FD;
+  color: #1976D2;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 60px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #BBDEFB;
+}
+
+.date-box.nearest {
+  background: #FBC02D;
+  color: #3e2723;
+  border: 1px solid #F9A825;
+}
+
+.date-day {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.full-date {
+  color: #7f8c8d;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Middle Section: Services & Actions */
+.bill-card-middle {
+  flex: 2;
+  /* Give more space */
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  /* Center content */
+  border-left: 1px solid #F0F0F0;
+}
+
+.services-container {
+  margin-bottom: 12px;
+  min-height: 24px;
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.service-tag {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-action {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  max-width: 120px;
+}
+
+.btn-action:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-action.approve {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #A5D6A7;
+}
+
+.btn-action.approve:hover:not(:disabled) {
+  background-color: #C8E6C9;
+}
+
+.btn-action.reject {
+  background-color: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #EF9A9A;
+}
+
+.btn-action.reject:hover:not(:disabled) {
+  background-color: #FFCDD2;
+}
+
+/* Right Section: Amounts & Status */
+.bill-card-right {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  min-width: 160px;
+  background: #FAFAFA;
+  border-left: 1px solid #F0F0F0;
+}
+
+.amount-group {
+  text-align: right;
+}
+
+.total-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #95a5a6;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.total-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #2c3e50;
+  font-family: 'Roboto', sans-serif;
+}
+
+.received-group {
+  margin-top: 8px;
+}
+
+.received-amount {
   font-size: 14px;
+  font-weight: 700;
+  color: #4CAF50;
+}
+
+.tags-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.service-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .status-badge {
