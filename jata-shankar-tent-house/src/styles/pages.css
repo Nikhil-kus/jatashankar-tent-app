@@ -633,11 +633,14 @@ button {
 
   .bill-card-right {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
+    /* Align top so tags wrap nicely */
     justify-content: space-between;
     border-bottom: none;
     background: #FAFAFA;
     min-width: auto;
+    gap: 12px;
+    /* Add gap between tags and amount */
   }
 
   .amount-group {

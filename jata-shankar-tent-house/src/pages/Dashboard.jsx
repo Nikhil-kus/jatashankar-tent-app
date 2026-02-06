@@ -1535,17 +1535,19 @@ export default function Dashboard() {
                             </div>
                           )}
                         </div>
-                        <div>
-                          <span className={`status-badge`} style={{
-                            backgroundColor: bill.status === 'pending' ? '#FF5252' : bill.status === 'approved' ? '#4CAF50' : '#FF9800',
-                            textAlign: 'right',
-                            display: 'block',
-                            width: 'fit-content',
-                            marginLeft: 'auto'
-                          }}>
-                            {bill.status}
-                          </span>
-                        </div>
+                        {bill.status !== 'approved' && (
+                          <div>
+                            <span className={`status-badge`} style={{
+                              backgroundColor: bill.status === 'pending' ? '#FF5252' : '#FF9800',
+                              textAlign: 'right',
+                              display: 'block',
+                              width: 'fit-content',
+                              marginLeft: 'auto'
+                            }}>
+                              {bill.status}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="amount-group">
                           <p className="total-label">Total</p>
