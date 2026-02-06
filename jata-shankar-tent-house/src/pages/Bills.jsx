@@ -321,6 +321,8 @@ export default function Bills() {
 ${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:* ₹${bill.total - bill.receivedAmount}` : ''}
 
 📎 Bill attached as file: ${fileName}
+
+Know about us- jatashankartent.in
     `.trim();
 
     // For mobile: Try to share using Web Share API if available
