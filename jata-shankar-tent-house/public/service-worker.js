@@ -1,19 +1,12 @@
-self.addEventListener("install", e => {
-    e.waitUntil(
-        caches.open("tent-app").then(cache => {
-            return cache.addAll([
-                "/",
-                "/index.html",
-                "/manifest.json"
-            ]);
-        })
-    );
+self.addEventListener("install", (event) => {
+    console.log("Service Worker installed");
+    self.skipWaiting();
 });
 
-self.addEventListener("fetch", e => {
-    e.respondWith(
-        caches.match(e.request).then(res => {
-            return res || fetch(e.request);
-        })
-    );
+self.addEventListener("activate", (event) => {
+    console.log("Service Worker activated");
+});
+
+self.addEventListener("fetch", (event) => {
+    // simple fetch
 });
