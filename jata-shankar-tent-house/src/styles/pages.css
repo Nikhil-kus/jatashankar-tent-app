@@ -345,10 +345,11 @@ button {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0 0 20px 0;
+  /* Removed card styling to not look like a header */
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .dashboard-header h1 {
@@ -917,71 +918,89 @@ button {
 
 /* Right Section: Amounts & Status */
 .bill-card-right {
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  justify-content: space-between;
-  min-width: 160px;
-  background: #FAFAFA;
-  border-left: 1px solid #F0F0F0;
+  justify-content: center;
+  /* Center vertically */
+  min-width: 120px;
+  /* Reduced from 160px */
+  background: white;
+  /* Cleaner look */
+  border-left: 1px dashed #eee;
+  /* Subtle separation */
 }
 
 .amount-group {
   text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
 }
 
 .total-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #95a5a6;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  display: none;
+  /* Hide the label "Total" for cleaner look, amount is obvious */
 }
 
 .total-amount {
-  font-size: 18px;
-  font-weight: 800;
-  color: #2c3e50;
+  font-size: 16px;
+  /* Slightly smaller */
+  font-weight: 700;
+  color: #333;
   font-family: 'Roboto', sans-serif;
+  line-height: 1.2;
 }
 
 .received-group {
-  margin-top: 8px;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .received-amount {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   color: #4CAF50;
+  background: #E8F5E9;
+  padding: 1px 6px;
+  border-radius: 10px;
 }
 
 .tags-row {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
-  justify-content: flex-start;
-  /* Default to left alignment for moved tags */
-  margin-top: 4px;
-  /* Reduced from 12px */
+  justify-content: flex-end;
+  /* Align to right */
+  margin-bottom: 6px;
+  /* Space between tags and amount */
+  width: 100%;
 }
 
 .service-tag {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
+  font-size: 9px;
+  /* Smaller font */
+  font-weight: 600;
+  padding: 2px 6px;
+  /* More compact padding */
+  border-radius: 4px;
+  /* Slightly sharper corners */
   text-transform: uppercase;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.2px;
 }
 
 .status-badge {
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
   color: white;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
+  margin-bottom: 6px;
+  text-transform: uppercase;
 }
 
 .bill-details-section {

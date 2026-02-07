@@ -1507,8 +1507,29 @@ export default function Dashboard() {
 
                       {/* Right Side - Amounts & Status */}
                       <div className="bill-card-right">
-                        {/* Service Tags Moved Here */}
-                        <div className="services-container" style={{ marginBottom: 0, marginRight: 'auto' }}>
+                        {/* Status Badge */}
+                        {bill.status !== 'approved' && (
+                          <span className={`status-badge`} style={{
+                            backgroundColor: bill.status === 'pending' ? '#FF5252' : '#FF9800',
+                          }}>
+                            {bill.status}
+                          </span>
+                        )}
+
+                        {/* Amount Group */}
+                        <div className="amount-group">
+                          <p className="total-amount">₹{bill.total}</p>
+
+                          {bill.receivedAmount && (
+                            <div className="received-group">
+                              <span style={{ fontSize: '10px', color: '#666' }}>Received</span>
+                              <span className="received-amount">₹{bill.receivedAmount}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Service Tags */}
+                        <div className="services-container">
                           {bill.serviceTypes && bill.serviceTypes.length > 0 && (
                             <div className="tags-row">
                               {bill.serviceTypes.map((service, idx) => {
@@ -1532,31 +1553,6 @@ export default function Dashboard() {
                                   </span>
                                 );
                               })}
-                            </div>
-                          )}
-                        </div>
-                        {bill.status !== 'approved' && (
-                          <div>
-                            <span className={`status-badge`} style={{
-                              backgroundColor: bill.status === 'pending' ? '#FF5252' : '#FF9800',
-                              textAlign: 'right',
-                              display: 'block',
-                              width: 'fit-content',
-                              marginLeft: 'auto'
-                            }}>
-                              {bill.status}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="amount-group">
-                          <p className="total-label">Total</p>
-                          <p className="total-amount">₹{bill.total}</p>
-
-                          {bill.receivedAmount && (
-                            <div className="received-group">
-                              <p className="total-label" style={{ fontSize: '9px' }}>Received</p>
-                              <p className="received-amount">₹{bill.receivedAmount}</p>
                             </div>
                           )}
                         </div>
