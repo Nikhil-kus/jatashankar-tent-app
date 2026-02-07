@@ -632,33 +632,63 @@ button {
     align-items: stretch;
   }
 
+  /* Right Section: Amounts & Status */
   .bill-card-right {
+    width: 100%;
+    border-left: none;
+    border-right: none;
+    border-top: 1px dashed #eee;
+    /* Separator for stacked view */
+    padding: 12px;
+    display: flex;
     flex-direction: row;
-    align-items: flex-start;
-    /* Align top so tags wrap nicely */
+    /* Keep row for mobile to spread items */
     justify-content: space-between;
-    border-bottom: none;
-    background: #FAFAFA;
+    align-items: center;
+    background: white;
     min-width: auto;
-    gap: 12px;
-    /* Add gap between tags and amount */
   }
 
-  .amount-group {
-    text-align: right;
-    display: flex;
-    flex-direction: column;
+  /* Adjust internal groups for the row layout on mobile */
+  .bill-card-right .amount-group {
     align-items: flex-end;
+    /* Amount on right */
+    order: 2;
+  }
+
+  .bill-card-right .services-container {
+    order: 3;
+    width: 100%;
+    margin-top: 8px;
+    /* Move to next line if needed, or keep compact */
+  }
+
+  /* Let's try a better mobile layout: Status (top-left), Amount (top-right), Services (bottom) */
+  .bill-card-right {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
   }
 
   .status-badge {
-    margin-left: 0 !important;
-    order: -1;
-    /* Show status on the left in the footer on mobile if needed, or keep standard */
+    justify-self: start;
+    margin-bottom: 0 !important;
+  }
+
+  .amount-group {
+    justify-self: end;
+  }
+
+  .services-container {
+    grid-column: 1 / -1;
+    /* Full width */
+    margin-top: 4px;
   }
 
   .tags-row {
     justify-content: flex-start;
+    /* Start form left on mobile */
   }
 }
 
@@ -1357,19 +1387,24 @@ button {
   }
 
   .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
     gap: 12px;
     padding: 12px;
     margin-bottom: 16px;
   }
 
   .dashboard-header h1 {
-    font-size: 20px;
+    font-size: 18px;
+    /* Slightly smaller font for mobile to fit */
   }
 
   .dashboard-header p {
-    font-size: 12px;
+    font-size: 11px;
+    display: none;
+    /* Hide subtitle on very small screens if needed, or keep it. Let's keep it but small */
+    display: block;
   }
 
   .dashboard-content {
