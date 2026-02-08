@@ -1509,6 +1509,9 @@ https://jatashankartent-app.vercel.app/bill/${bill.id}`;
         </div>
       )
       }
-    </div >
+      <div style={{ textAlign: 'center', marginTop: '40px', color: '#999', fontSize: '12px', paddingBottom: '20px' }}>
+        <p>Version 1.3</p>
+      </div>
+    </div>
   );
 }
