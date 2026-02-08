@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../services/authService';
-import { getAllBills, getAllBookings, createBill, createBooking, updateBillStatus, getItems } from '../services/firestoreService';
+import { getAllBills, getAllBookings, createBill, createBooking, updateBillStatus, getItems, updateBill } from '../services/firestoreService'; // Added updateBill
 import { db } from '../firebase/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import '../styles/pages.css';
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [showDetailedBill, setShowDetailedBill] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null); // Add selected bill state
   const [showMenu, setShowMenu] = useState(false); // Add menu state
+  const [editingBillId, setEditingBillId] = useState(null); // Added for editing bills
   const [quickBillData, setQuickBillData] = useState({
     customerName: '',
     mobileNumber: '',
@@ -260,7 +261,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
   };
 
-  // Handle detailed bill creation
+  // Handle detailed bill creation or update
   const handleCreateDetailedBill = async (e) => {
     e.preventDefault();
 
@@ -301,12 +302,25 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         serviceTypes: ['Tent'], // All detailed bills are automatically 'Tent'
       };
 
-      const billId = await createBill(billData);
-      await createBooking({
-        date: detailedBillData.date,
-        billId: billId,
-        customerName: detailedBillData.customerName.trim(),
-      });
+      if (editingBillId) {
+        // UPDATE EXISTING BILL
+        await updateBill(editingBillId, billData);
+        alert('Bill updated successfully!');
+
+        // Update selectedBill if it's the one we just edited
+        if (selectedBill && selectedBill.id === editingBillId) {
+          setSelectedBill({ ...selectedBill, ...billData });
+        }
+      } else {
+        // CREATE NEW BILL
+        const billId = await createBill(billData);
+        await createBooking({
+          date: detailedBillData.date,
+          billId: billId,
+          customerName: detailedBillData.customerName.trim(),
+        });
+        alert('Detailed bill created and booking confirmed!');
+      }
 
       setDetailedBillData({
         customerName: '',
@@ -316,15 +330,31 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         items: []
       });
       setShowDetailedBill(false);
+      setEditingBillId(null); // Reset editing state
 
       await fetchData();
-      alert('Detailed bill created and booking confirmed!');
     } catch (err) {
-      setError('Failed to create bill: ' + err.message);
+      setError('Failed to save bill: ' + err.message);
       console.error(err);
     } finally {
       setCreatingBill(false);
     }
+  };
+
+  // Pre-fill modal for editing
+  const handleEditBill = (bill) => {
+    setEditingBillId(bill.id);
+    setDetailedBillData({
+      customerName: bill.customerName,
+      mobileNumber: bill.mobileNumber || '',
+      address: bill.address || '',
+      date: bill.date,
+      items: bill.items.map(item => ({
+        ...item,
+        // Ensure all necessary fields are present
+      }))
+    });
+    setShowDetailedBill(true);
   };
 
   // Add item to detailed bill - Open Modal
@@ -580,6 +610,13 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   style={{ background: '#25D366', padding: '8px 16px', fontSize: '13px' }}
                 >
                   💬 Share
+                </button>
+                <button
+                  onClick={() => handleEditBill(selectedBill)}
+                  className="btn-primary"
+                  style={{ background: '#7E57C2', padding: '8px 16px', fontSize: '13px' }}
+                >
+                  ✏️ Edit
                 </button>
                 {selectedBill.mobileNumber ? (
                   <button
