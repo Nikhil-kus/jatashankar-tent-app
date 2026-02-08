@@ -344,14 +344,18 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
   // Pre-fill modal for editing
   const handleEditBill = (bill) => {
     setEditingBillId(bill.id);
+    // Ensure deep copy of items to avoid mutating selectedBill directly when editing in modal
+    // Also ensure date is in correct format (YYYY-MM-DD)
     setDetailedBillData({
       customerName: bill.customerName,
       mobileNumber: bill.mobileNumber || '',
       address: bill.address || '',
       date: bill.date,
       items: bill.items.map(item => ({
-        ...item,
-        // Ensure all necessary fields are present
+        id: item.id || Date.now() + Math.random(), // Ensure ID exists
+        name: item.name,
+        quantity: item.quantity,
+        rate: item.rate
       }))
     });
     setShowDetailedBill(true);
@@ -611,13 +615,72 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 >
                   💬 Share
                 </button>
-                <button
-                  onClick={() => handleEditBill(selectedBill)}
-                  className="btn-primary"
-                  style={{ background: '#7E57C2', padding: '8px 16px', fontSize: '13px' }}
-                >
-                  ✏️ Edit
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowMenu(!showMenu)}
+                    className="btn-icon"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '20px',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    ⋮
+                  </button>
+                  {showMenu && (
+                    <div style={{
+                      position: 'absolute',
+                      right: 0,
+                      top: '100%',
+                      background: 'white',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      zIndex: 10,
+                      minWidth: '120px'
+                    }}>
+                      <button
+                        onClick={() => {
+                          handleEditBill(selectedBill);
+                          setShowMenu(false);
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 16px',
+                          background: 'none',
+                          border: 'none',
+                          borderBottom: '1px solid #eee',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        ✏️ Edit Bill
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Delete functionality is not yet implemented.')) setShowMenu(false);
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 16px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: 'red'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {selectedBill.mobileNumber ? (
                   <button
                     onClick={() => window.location.href = `tel:${selectedBill.mobileNumber}`}
