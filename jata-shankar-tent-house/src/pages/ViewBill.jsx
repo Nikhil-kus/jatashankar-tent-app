@@ -147,7 +147,7 @@ export default function ViewBill() {
                 {/* Footer */}
                 <div style={{ marginTop: '50px', textAlign: 'center', color: '#999', fontSize: '12px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
                     <p>Thank you for choosing Jata Shankar Tent House!</p>
-                    <p>Contact: +91 9999999999 | www.jatashankartent.in</p>
+                    <p>Contact: +91 9691809544 | www.jatashankartent.in</p>
                 </div>
             </div>
 

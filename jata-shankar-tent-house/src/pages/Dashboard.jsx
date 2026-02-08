@@ -176,6 +176,10 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           <div class="summary-row"><span>Total Amount:</span><span>₹${bill.total}</span></div>
           ${bill.receivedAmount ? `<div class="summary-row"><span>Received:</span><span>₹${bill.receivedAmount}</span></div><div class="summary-row"><span>Balance:</span><span>₹${bill.total - bill.receivedAmount}</span></div>` : ''}
         </div>
+        <div style="margin-top: 40px; text-align: center; color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px;">
+          <p>Thank you for choosing Jata Shankar Tent House!</p>
+          <p>Contact: +91 9691809544 | www.jatashankartent.in</p>
+        </div>
       </body>
       </html>
     `;

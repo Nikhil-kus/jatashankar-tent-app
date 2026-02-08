@@ -300,6 +300,7 @@ export default function Bills() {
         <div class="footer">
           <p>Generated on ${new Date().toLocaleString()}</p>
           <p>This is a computer-generated document</p>
+          <p>Contact: +91 9691809544 | www.jatashankartent.in</p>
         </div>
       </body>
       </html>
