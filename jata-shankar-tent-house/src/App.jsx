@@ -7,6 +7,7 @@ import CreateBill from './pages/CreateBill';
 import Bills from './pages/Bills';
 import Calendar from './pages/Calendar';
 import Items from './pages/Items';
+import ViewBill from './pages/ViewBill';
 import './styles/pages.css';
 
 /**
@@ -28,6 +29,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/new-bill" element={<CreateBill />} />
+        <Route path="/bill/:id" element={<ViewBill />} />
 
         {/* Protected Routes (Owner Only) */}
         <Route

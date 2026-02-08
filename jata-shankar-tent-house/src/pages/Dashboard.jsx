@@ -115,7 +115,7 @@ Visit us:
 https://jatashankartent.in
 
 Download your bill:
-https://jatashankartent.in`;
+https://jatashankartent-app.vercel.app/bill/${bill.id}`;
 
     const encodedMessage = encodeURIComponent(message);
     const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
