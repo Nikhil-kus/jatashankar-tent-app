@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getBillById } from '../services/firestoreService';
 import '../styles/pages.css';
 
 export default function ViewBill() {
-    const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const id = searchParams.get('id');
     const navigate = useNavigate();
     const [bill, setBill] = useState(null);
     const [loading, setLoading] = useState(true);
