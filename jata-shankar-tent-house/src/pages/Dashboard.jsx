@@ -104,96 +104,26 @@ export default function Dashboard() {
   };
 
   // Share bill via WhatsApp (same as Bills.jsx)
-  const handleShareWhatsAppDashboard = async (bill) => {
+  const handleShareWhatsAppDashboard = (bill) => {
     if (!bill) return;
 
-    // Create HTML content for the bill
-    const billHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Bill - ${bill.customerName}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2196f3; padding-bottom: 15px; }
-          .header h1 { margin: 0; color: #2196f3; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th { background-color: #f5f5f5; padding: 10px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
-          td { padding: 10px; border: 1px solid #ddd; }
-          .total-row { background-color: #f0f0f0; font-weight: bold; }
-          .summary { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #2196f3; }
-          .summary-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>JATA SHANKAR TENT HOUSE</h1>
-          <p>Bill Details</p>
-        </div>
-        <p><strong>Customer:</strong> ${bill.customerName}</p>
-        <p><strong>Date:</strong> ${bill.date}</p>
-        <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
-        <table>
-          <thead>
-            <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
-          </thead>
-          <tbody>
-            ${bill.items.map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
-            <tr class="total-row"><td colspan="3">Total Items: ${bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
-          </tbody>
-        </table>
-        <div class="summary">
-          <div class="summary-row"><span>Total Amount:</span><span>₹${bill.total}</span></div>
-          ${bill.receivedAmount ? `<div class="summary-row"><span>Received:</span><span>₹${bill.receivedAmount}</span></div><div class="summary-row"><span>Balance:</span><span>₹${bill.total - bill.receivedAmount}</span></div>` : ''}
-        </div>
-      </body>
-      </html>
-    `;
+    const message = `Here is your bill from Jata Shankar Tent House.
 
-    const blob = new Blob([billHTML], { type: 'text/html' });
-    const url = window.URL.createObjectURL(blob);
-    const fileName = `Bill_${bill.customerName}_${bill.date}.html`;
+Thank you for choosing us.
 
-    const whatsappMessage = `Here is your bill from Jata Shankar Tent House 📄
+Visit us:
+https://jatashankartent.in
 
-Thank you for booking with us.
+Download your bill:
+https://jatashankartent.in`;
 
-Visit us for future bookings:
-https://jatashankartent.in`.trim();
+    const encodedMessage = encodeURIComponent(message);
+    const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
+    const url = phoneNumber
+      ? `https://wa.me/${phoneNumber}?text=${encodedMessage}`
+      : `https://wa.me/?text=${encodedMessage}`;
 
-    if (navigator.share) {
-      try {
-        await navigator.clipboard.writeText(whatsappMessage);
-        alert("Message copied! Please paste it in WhatsApp if needed.");
-
-        await navigator.share({
-          title: `Bill - ${bill.customerName}`,
-          text: whatsappMessage,
-          files: [new File([blob], fileName, { type: 'text/html' })]
-        });
-      } catch (err) {
-        console.error("Share failed:", err);
-        const encodedMessage = encodeURIComponent(whatsappMessage);
-        const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
-        const url = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
-        window.open(url, '_blank');
-      }
-    } else {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      const encodedMessage = encodeURIComponent(whatsappMessage);
-      const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
-      const waUrl = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
-      window.open(waUrl, '_blank');
-
-      window.URL.revokeObjectURL(url);
-    }
+    window.open(url, '_blank');
   };
 
   // Download bill as HTML
