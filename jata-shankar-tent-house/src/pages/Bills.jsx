@@ -237,6 +237,7 @@ export default function Bills() {
             <label>Customer Name:</label>
             <value>${bill.customerName}</value>
              ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
+             ${bill.address ? `<label style="margin-top: 10px; display: block;">Address:</label><value>${bill.address}</value>` : ''}
           </div>
           <div class="info-block">
             <label>Event Date:</label>
@@ -464,6 +465,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             <label>Customer Name:</label>
             <value>${bill.customerName}</value>
              ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
+             ${bill.address ? `<label style="margin-top: 10px; display: block;">Address:</label><value>${bill.address}</value>` : ''}
           </div>
           <div class="info-block">
             <label>Event Date:</label>

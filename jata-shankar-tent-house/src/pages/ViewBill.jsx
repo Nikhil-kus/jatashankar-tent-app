@@ -70,6 +70,7 @@ export default function ViewBill() {
                         <h3 style={{ margin: '0 0 10px 0', color: '#333' }}>To:</h3>
                         <p style={{ margin: '5px 0' }}><strong>{bill.customerName}</strong></p>
                         {bill.mobileNumber && <p style={{ margin: '5px 0' }}>Mobile: {bill.mobileNumber}</p>}
+                        {bill.address && <p style={{ margin: '5px 0' }}>Address: {bill.address}</p>}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <p style={{ margin: '5px 0' }}><strong>Date:</strong> {bill.date}</p>

@@ -18,14 +18,16 @@ export default function Dashboard() {
   const [quickBillData, setQuickBillData] = useState({
     customerName: '',
     mobileNumber: '',
+    address: '', // Added address
     date: '',
     totalAmount: '',
     receivedAmount: '',
-    serviceTypes: [] // Add service types
+    serviceTypes: []
   });
   const [detailedBillData, setDetailedBillData] = useState({
     customerName: '',
     mobileNumber: '',
+    address: '', // Added address
     date: '',
     items: []
   });
@@ -154,6 +156,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           <p>Bill Details</p>
         </div>
         <p><strong>Customer:</strong> ${bill.customerName}</p>
+        ${bill.address ? `<p><strong>Address:</strong> ${bill.address}</p>` : ''}
         <p><strong>Date:</strong> ${bill.date}</p>
         <p><strong>Status:</strong> ${bill.status.toUpperCase()}</p>
         <table>
@@ -212,6 +215,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       const billData = {
         customerName: quickBillData.customerName.trim(),
         mobileNumber: quickBillData.mobileNumber.trim(),
+        address: quickBillData.address.trim(), // Added address
         date: quickBillData.date,
         items: [],
         total: parseFloat(quickBillData.totalAmount),
@@ -235,6 +239,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       setQuickBillData({
         customerName: '',
         mobileNumber: '',
+        address: '', // Reset address
         date: '',
         totalAmount: '',
         receivedAmount: '',
@@ -278,6 +283,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       const billData = {
         customerName: detailedBillData.customerName.trim(),
         mobileNumber: detailedBillData.mobileNumber.trim(),
+        address: detailedBillData.address.trim(), // Added address
         date: detailedBillData.date,
         items: detailedBillData.items.map(item => ({
           id: item.id,
@@ -302,6 +308,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       setDetailedBillData({
         customerName: '',
         mobileNumber: '',
+        address: '', // Reset address
         date: '',
         items: []
       });
@@ -317,22 +324,39 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
   };
 
-  // Add item to detailed bill
+  // Add item to detailed bill - Open Modal
   const addItemToDetailedBill = (item) => {
-    const existing = detailedBillData.items.find(i => i.id === item.id);
+    setSelectedItemForDetailedBill(item);
+    setDetailedBillInputQty(1);
+    setQtyModalOpen(true);
+  };
+
+  const handleConfirmDetailedBillQty = (e) => {
+    e.preventDefault();
+    if (!selectedItemForDetailedBill) return;
+
+    const qty = parseInt(detailedBillInputQty);
+    if (isNaN(qty) || qty <= 0) {
+      alert("Please enter a valid quantity");
+      return;
+    }
+
+    const existing = detailedBillData.items.find(i => i.id === selectedItemForDetailedBill.id);
     if (existing) {
       setDetailedBillData({
         ...detailedBillData,
         items: detailedBillData.items.map(i =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === selectedItemForDetailedBill.id ? { ...i, quantity: i.quantity + qty } : i
         )
       });
     } else {
       setDetailedBillData({
         ...detailedBillData,
-        items: [...detailedBillData.items, { ...item, quantity: 1 }]
+        items: [...detailedBillData.items, { ...selectedItemForDetailedBill, quantity: qty }]
       });
     }
+    setQtyModalOpen(false);
+    setSelectedItemForDetailedBill(null);
   };
 
   // Update item quantity
@@ -436,6 +460,19 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
   };
 
+  const handleOpenInventory = (bill) => {
+    // Open in new tab
+    const url = `${window.location.origin}/inventory-logs?id=${bill.id}`;
+    window.open(url, '_blank');
+  };
+
+  const handleShareInventory = (bill) => {
+    const url = `${window.location.origin}/inventory-logs?id=${bill.id}`;
+    const message = `Manage Inventory for Bill #${bill.id}\nCustomer: ${bill.customerName}\nLink: ${url}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
   const handleLogout = async () => {
     try {
       await logoutUser();
@@ -508,7 +545,24 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         <div className="dashboard-content">
           <div className="section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ margin: 0 }}>Bill Details</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={closeModal}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    color: '#666',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  ←
+                </button>
+                <h2 style={{ margin: 0 }}>Bill Details</h2>
+              </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => handleDownloadBillDashboard(selectedBill)}
@@ -524,20 +578,30 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 >
                   💬 Share
                 </button>
-                <button
-                  onClick={closeModal}
-                  style={{
-                    background: '#9e9e9e',
-                    color: 'white',
-                    padding: '8px 16px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '13px'
-                  }}
-                >
-                  ← Back
-                </button>
+                {selectedBill.mobileNumber ? (
+                  <button
+                    onClick={() => window.location.href = `tel:${selectedBill.mobileNumber}`}
+                    className="btn-primary"
+                    style={{ background: '#FF9800', padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    📞 Call
+                  </button>
+                ) : (
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      background: '#9e9e9e',
+                      color: 'white',
+                      padding: '8px 16px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '13px'
+                    }}
+                  >
+                    ← Back
+                  </button>
+                )}
               </div>
             </div>
 
@@ -548,6 +612,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
               {selectedBill.mobileNumber && (
                 <p style={{ margin: '8px 0', fontSize: '14px' }}>
                   <strong>Mobile:</strong> {selectedBill.mobileNumber}
+                </p>
+              )}
+              {selectedBill.address && (
+                <p style={{ margin: '8px 0', fontSize: '14px' }}>
+                  <strong>Address:</strong> {selectedBill.address}
                 </p>
               )}
               <p style={{ margin: '8px 0', fontSize: '14px' }}>
@@ -579,6 +648,27 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Inventory Management Section */}
+            <div style={{ marginBottom: '16px', padding: '10px', background: '#e3f2fd', borderRadius: '6px' }}>
+              <h3 style={{ fontSize: '14px', margin: '0 0 8px 0', color: '#1565c0' }}>Items Inventory Tracking</h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => handleOpenInventory(selectedBill)}
+                  className="btn-primary"
+                  style={{ background: '#1565c0', padding: '6px 12px', fontSize: '12px', flex: 1 }}
+                >
+                  📦 Manage Logs
+                </button>
+                <button
+                  onClick={() => handleShareInventory(selectedBill)}
+                  className="btn-primary"
+                  style={{ background: '#00897b', padding: '6px 12px', fontSize: '12px', flex: 1 }}
+                >
+                  📱 Share Link
+                </button>
+              </div>
             </div>
 
             {selectedBill.items && selectedBill.items.length > 0 && (
@@ -963,6 +1053,26 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Address
+                    </label>
+                    <textarea
+                      value={detailedBillData.address}
+                      onChange={(e) => setDetailedBillData({ ...detailedBillData, address: e.target.value })}
+                      placeholder="Enter customer address"
+                      rows="2"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
                       Event Date *
                     </label>
                     <input
@@ -1250,6 +1360,26 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                      Address
+                    </label>
+                    <textarea
+                      value={quickBillData.address}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, address: e.target.value })}
+                      placeholder="Enter customer address"
+                      rows="2"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
                       Received Amount (₹) (Optional)
                     </label>
                     <input
@@ -1512,6 +1642,90 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       <div style={{ textAlign: 'center', marginTop: '40px', color: '#999', fontSize: '12px', paddingBottom: '20px' }}>
         <p>Version 1.3</p>
       </div>
+
+      {/* Quantity Selection Modal */}
+      {qtyModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000 // Higher z-index to be on top of everything
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            width: '90%',
+            maxWidth: '350px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
+              Quantity for {selectedItemForDetailedBill?.name}
+            </h3>
+            <form onSubmit={handleConfirmDetailedBillQty}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Enter Quantity:
+                </label>
+                <input
+                  type="number"
+                  value={detailedBillInputQty}
+                  onChange={(e) => setDetailedBillInputQty(e.target.value)}
+                  min="1"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '18px',
+                    border: '2px solid #2196f3',
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setQtyModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    background: '#f5f5f5',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px'
+                  }}
+                >
+                  Add Items
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

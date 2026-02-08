@@ -145,6 +145,22 @@ export const getBillsByDate = async (date) => {
   }
 };
 
+/**
+ * Update a bill (generic)
+ * @param {string} billId - Bill document ID
+ * @param {object} updatedData - Data to update
+ * @returns {Promise}
+ */
+export const updateBill = async (billId, updatedData) => {
+  try {
+    const billRef = doc(db, 'bills', billId);
+    await updateDoc(billRef, updatedData);
+  } catch (error) {
+    console.error('Error updating bill:', error);
+    throw error;
+  }
+};
+
 // ============ BOOKINGS COLLECTION ============
 
 /**

@@ -6,6 +6,7 @@ import '../styles/pages.css';
 export default function CreateBill() {
   const [customerName, setCustomerName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
+  const [address, setAddress] = useState(''); // Added address state
   const [date, setDate] = useState('');
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -13,6 +14,10 @@ export default function CreateBill() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [dateError, setDateError] = useState('');
+  // Quantity check modal state
+  const [qtyModalOpen, setQtyModalOpen] = useState(false);
+  const [selectedItemForQty, setSelectedItemForQty] = useState(null);
+  const [inputQty, setInputQty] = useState(1);
   const navigate = useNavigate();
 
   // Fetch items on mount
@@ -53,17 +58,34 @@ export default function CreateBill() {
     }
   };
 
-  // Add item to bill
+  // Add item to bill - Open Modal
   const addItem = (item) => {
-    const existing = selectedItems.find(si => si.id === item.id);
+    setSelectedItemForQty(item);
+    setInputQty(1);
+    setQtyModalOpen(true);
+  };
+
+  const handleConfirmQty = (e) => {
+    e.preventDefault();
+    if (!selectedItemForQty) return;
+
+    const qty = parseInt(inputQty);
+    if (isNaN(qty) || qty <= 0) {
+      alert("Please enter a valid quantity");
+      return;
+    }
+
+    const existing = selectedItems.find(si => si.id === selectedItemForQty.id);
     if (existing) {
-      updateItemQuantity(item.id, existing.quantity + 1);
+      updateItemQuantity(selectedItemForQty.id, existing.quantity + qty);
     } else {
       setSelectedItems([
         ...selectedItems,
-        { ...item, quantity: 1 },
+        { ...selectedItemForQty, quantity: qty },
       ]);
     }
+    setQtyModalOpen(false);
+    setSelectedItemForQty(null);
   };
 
   // Update item quantity
@@ -117,6 +139,7 @@ export default function CreateBill() {
       const billData = {
         customerName: customerName.trim(),
         mobileNumber: mobileNumber.trim(),
+        address: address.trim(), // Added address
         date,
         items: selectedItems.map(item => ({
           id: item.id,
@@ -179,6 +202,18 @@ export default function CreateBill() {
               onChange={(e) => setMobileNumber(e.target.value)}
               placeholder="Enter mobile number"
               maxLength="10"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="address">Address</label>
+            <textarea
+              id="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Enter customer address"
+              rows="2"
+              style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ddd' }}
             />
           </div>
 
@@ -287,6 +322,90 @@ export default function CreateBill() {
           {submitting ? 'Creating Bill...' : 'Submit Bill for Approval'}
         </button>
       </form>
+
+      {/* Quantity Selection Modal */}
+      {qtyModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            width: '90%',
+            maxWidth: '350px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
+              Quantity for {selectedItemForQty?.name}
+            </h3>
+            <form onSubmit={handleConfirmQty}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Enter Quantity:
+                </label>
+                <input
+                  type="number"
+                  value={inputQty}
+                  onChange={(e) => setInputQty(e.target.value)}
+                  min="1"
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    fontSize: '18px',
+                    border: '2px solid #2196f3',
+                    borderRadius: '4px',
+                    textAlign: 'center'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setQtyModalOpen(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    background: '#f5f5f5',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    background: '#2196f3',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '14px'
+                  }}
+                >
+                  Add Items
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

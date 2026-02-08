@@ -8,6 +8,7 @@ import Bills from './pages/Bills';
 import Calendar from './pages/Calendar';
 import Items from './pages/Items';
 import ViewBill from './pages/ViewBill';
+import InventoryLogs from './pages/InventoryLogs'; // New Import
 import './styles/pages.css';
 
 /**
