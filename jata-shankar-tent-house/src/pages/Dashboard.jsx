@@ -36,6 +36,9 @@ export default function Dashboard() {
   const [newReceivedAmount, setNewReceivedAmount] = useState('');
   const [availableItems, setAvailableItems] = useState([]);
   const [creatingBill, setCreatingBill] = useState(false);
+  const [qtyModalOpen, setQtyModalOpen] = useState(false); // Added missing state
+  const [selectedItemForDetailedBill, setSelectedItemForDetailedBill] = useState(null); // Added missing state
+  const [detailedBillInputQty, setDetailedBillInputQty] = useState(1); // Added missing state
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -649,6 +652,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 </div>
               )}
             </div>
+
+
 
             {/* Inventory Management Section */}
             <div style={{ marginBottom: '16px', padding: '10px', background: '#e3f2fd', borderRadius: '6px' }}>

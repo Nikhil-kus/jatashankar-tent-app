@@ -31,6 +31,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/new-bill" element={<CreateBill />} />
         <Route path="/bill" element={<ViewBill />} />
+        <Route path="/inventory-logs" element={<InventoryLogs />} />
 
         {/* Protected Routes (Owner Only) */}
         <Route
