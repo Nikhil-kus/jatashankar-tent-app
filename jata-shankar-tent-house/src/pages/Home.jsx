@@ -1,7 +1,39 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react'; // Added imports
+import { onAuthStateChanged } from 'firebase/auth'; // Added import
+import { auth } from '../firebase/firebaseConfig'; // Added import
 
 export default function Home() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true); // Added loading state
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#f5f5f5'
+      }}>
+        <div style={{ fontSize: '18px', color: '#666' }}>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -32,7 +64,7 @@ export default function Home() {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '30px' }}>
-          <button 
+          <button
             onClick={() => navigate('/new-bill')}
             style={{
               padding: '14px 28px',
@@ -50,7 +82,7 @@ export default function Home() {
           >
             Create New Bill
           </button>
-          <button 
+          <button
             onClick={() => navigate('/login')}
             style={{
               padding: '14px 28px',
