@@ -1019,8 +1019,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           {/* Stats Cards */}
           <div className="stats-grid">
             <div className="stat-card">
-              <h3>Total Bills</h3>
-              <p className="stat-number">{bills.length}</p>
+              <h3>Next Bills</h3>
+              <p className="stat-number">{bills.filter(b => b.date >= new Date().toISOString().split('T')[0]).length}</p>
             </div>
             <div className="stat-card">
               <h3>Pending Approval</h3>
