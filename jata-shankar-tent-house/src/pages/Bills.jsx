@@ -314,8 +314,8 @@ export default function Bills() {
 
 Thank you for booking with us.
 
-Visit us for future bookings:
-https://jatashankartent.in`.trim();
+Download your bill:
+https://jatashankartent-app.vercel.app/bill/${bill.id}`;
 
     // For mobile: Try to share using Web Share API if available
     if (navigator.share) {
