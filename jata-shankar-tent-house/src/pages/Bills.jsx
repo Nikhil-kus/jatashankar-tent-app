@@ -319,6 +319,11 @@ https://jatashankartent.in`.trim();
 
     // For mobile: Try to share using Web Share API if available
     if (navigator.share) {
+      // Copy text to clipboard as backup (WhatsApp often ignores text when sharing files)
+      navigator.clipboard.writeText(whatsappMessage).then(() => {
+        alert("Message copied to clipboard! If WhatsApp doesn't show the text, please paste it.");
+      }).catch(console.error);
+
       navigator.share({
         title: `Bill - ${bill.customerName}`,
         text: whatsappMessage,

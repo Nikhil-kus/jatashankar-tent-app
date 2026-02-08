@@ -163,6 +163,11 @@ Visit us for future bookings:
 https://jatashankartent.in`.trim();
 
     if (navigator.share) {
+      // Copy text to clipboard as backup (WhatsApp often ignores text when sharing files)
+      navigator.clipboard.writeText(whatsappMessage).then(() => {
+        alert("Message copied to clipboard! If WhatsApp doesn't show the text, please paste it.");
+      }).catch(console.error);
+
       navigator.share({
         title: `Bill - ${bill.customerName}`,
         text: whatsappMessage,
