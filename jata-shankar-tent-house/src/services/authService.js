@@ -1,7 +1,9 @@
-import { 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
+import {
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseConfig';
 
@@ -13,6 +15,7 @@ import { auth } from '../firebase/firebaseConfig';
  */
 export const loginUser = async (email, password) => {
   try {
+    await setPersistence(auth, browserLocalPersistence);
     const result = await signInWithEmailAndPassword(auth, email, password);
     return result.user;
   } catch (error) {
