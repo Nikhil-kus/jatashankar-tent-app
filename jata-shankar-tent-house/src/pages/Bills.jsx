@@ -129,7 +129,7 @@ export default function Bills() {
   };
 
   // Share bill via WhatsApp
-  const handleShareWhatsApp = (bill) => {
+  const handleShareWhatsApp = async (bill) => {
     if (!bill) return;
 
     // Create HTML content for the bill (same as download)
@@ -236,7 +236,7 @@ export default function Bills() {
           <div class="info-block">
             <label>Customer Name:</label>
             <value>${bill.customerName}</value>
-            ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
+             ${bill.mobileNumber ? `<label style="margin-top: 10px; display: block;">Mobile:</label><value>${bill.mobileNumber}</value>` : ''}
           </div>
           <div class="info-block">
             <label>Event Date:</label>
@@ -319,22 +319,23 @@ https://jatashankartent.in`.trim();
 
     // For mobile: Try to share using Web Share API if available
     if (navigator.share) {
-      // Copy text to clipboard as backup (WhatsApp often ignores text when sharing files)
-      navigator.clipboard.writeText(whatsappMessage).then(() => {
-        alert("Message copied to clipboard! If WhatsApp doesn't show the text, please paste it.");
-      }).catch(console.error);
+      try {
+        await navigator.clipboard.writeText(whatsappMessage);
+        alert("Message copied! Please paste it in WhatsApp if needed.");
 
-      navigator.share({
-        title: `Bill - ${bill.customerName}`,
-        text: whatsappMessage,
-        files: [new File([blob], fileName, { type: 'text/html' })]
-      }).catch(err => {
-        // Fallback: Open WhatsApp with text message
+        await navigator.share({
+          title: `Bill - ${bill.customerName}`,
+          text: whatsappMessage,
+          files: [new File([blob], fileName, { type: 'text/html' })]
+        });
+      } catch (err) {
+        console.error("Share failed:", err);
+        // Fallback to link if share fails completely
         const encodedMessage = encodeURIComponent(whatsappMessage);
         const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
         const url = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
         window.open(url, '_blank');
-      });
+      }
     } else {
       // Desktop: Download and show WhatsApp message
       const link = document.createElement('a');

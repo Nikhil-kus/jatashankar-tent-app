@@ -104,7 +104,7 @@ export default function Dashboard() {
   };
 
   // Share bill via WhatsApp (same as Bills.jsx)
-  const handleShareWhatsAppDashboard = (bill) => {
+  const handleShareWhatsAppDashboard = async (bill) => {
     if (!bill) return;
 
     // Create HTML content for the bill
@@ -163,21 +163,22 @@ Visit us for future bookings:
 https://jatashankartent.in`.trim();
 
     if (navigator.share) {
-      // Copy text to clipboard as backup (WhatsApp often ignores text when sharing files)
-      navigator.clipboard.writeText(whatsappMessage).then(() => {
-        alert("Message copied to clipboard! If WhatsApp doesn't show the text, please paste it.");
-      }).catch(console.error);
+      try {
+        await navigator.clipboard.writeText(whatsappMessage);
+        alert("Message copied! Please paste it in WhatsApp if needed.");
 
-      navigator.share({
-        title: `Bill - ${bill.customerName}`,
-        text: whatsappMessage,
-        files: [new File([blob], fileName, { type: 'text/html' })]
-      }).catch(err => {
+        await navigator.share({
+          title: `Bill - ${bill.customerName}`,
+          text: whatsappMessage,
+          files: [new File([blob], fileName, { type: 'text/html' })]
+        });
+      } catch (err) {
+        console.error("Share failed:", err);
         const encodedMessage = encodeURIComponent(whatsappMessage);
         const phoneNumber = bill.mobileNumber ? `91${bill.mobileNumber}` : '';
         const url = phoneNumber ? `https://wa.me/${phoneNumber}?text=${encodedMessage}` : `https://wa.me/?text=${encodedMessage}`;
         window.open(url, '_blank');
-      });
+      }
     } else {
       const link = document.createElement('a');
       link.href = url;
