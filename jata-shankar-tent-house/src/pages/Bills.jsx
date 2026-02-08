@@ -310,20 +310,12 @@ export default function Bills() {
     const fileName = `Bill_${bill.customerName}_${bill.date}.html`;
 
     // Create WhatsApp message with file link
-    const whatsappMessage = `
-*JATA SHANKAR TENT HOUSE - BILL*
+    const whatsappMessage = `Here is your bill from Jata Shankar Tent House 📄
 
-*Customer:* ${bill.customerName}
-*Event Date:* ${bill.date}
-*Status:* ${bill.status.toUpperCase()}
+Thank you for booking with us.
 
-*Total Amount:* ₹${bill.total}
-${bill.receivedAmount ? `*Received Amount:* ₹${bill.receivedAmount}\n*Balance:* ₹${bill.total - bill.receivedAmount}` : ''}
-
-📎 Bill attached as file: ${fileName}
-
-Know about us- jatashankartent.in
-    `.trim();
+Visit us for future bookings:
+https://jatashankartent.in`.trim();
 
     // For mobile: Try to share using Web Share API if available
     if (navigator.share) {

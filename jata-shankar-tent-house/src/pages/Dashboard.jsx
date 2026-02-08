@@ -155,7 +155,12 @@ export default function Dashboard() {
     const url = window.URL.createObjectURL(blob);
     const fileName = `Bill_${bill.customerName}_${bill.date}.html`;
 
-    const whatsappMessage = `*JATA SHANKAR TENT HOUSE - BILL*\n\n*Customer:* ${bill.customerName}\n*Date:* ${bill.date}\n*Total:* ₹${bill.total}\n${bill.receivedAmount ? `*Received:* ₹${bill.receivedAmount}\n*Balance:* ₹${bill.total - bill.receivedAmount}` : ''}\n\n📎 Bill attached`;
+    const whatsappMessage = `Here is your bill from Jata Shankar Tent House 📄
+
+Thank you for booking with us.
+
+Visit us for future bookings:
+https://jatashankartent.in`.trim();
 
     if (navigator.share) {
       navigator.share({
