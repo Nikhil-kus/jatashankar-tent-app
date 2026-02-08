@@ -1026,14 +1026,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
               <h3>Pending Approval</h3>
               <p className="stat-number pending">{pendingBills.length}</p>
             </div>
-            <div className="stat-card">
-              <h3>Approved Bookings</h3>
-              <p className="stat-number approved">{approvedBills.length}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Today's Bookings</h3>
-              <p className="stat-number">{todayBookings.length}</p>
-            </div>
+
           </div>
 
           {/* Action Buttons */}
