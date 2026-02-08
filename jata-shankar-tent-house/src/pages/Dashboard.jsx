@@ -602,13 +602,6 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  onClick={() => handleDownloadBillDashboard(selectedBill)}
-                  className="btn-primary"
-                  style={{ background: '#2196f3', padding: '8px 16px', fontSize: '13px' }}
-                >
-                  ⬇ Download
-                </button>
-                <button
                   onClick={() => handleShareWhatsAppDashboard(selectedBill)}
                   className="btn-primary"
                   style={{ background: '#25D366', padding: '8px 16px', fontSize: '13px' }}
@@ -622,9 +615,13 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     style={{
                       background: 'none',
                       border: 'none',
-                      fontSize: '20px',
+                      fontSize: '24px',
                       cursor: 'pointer',
-                      padding: '4px 8px',
+                      padding: '0 8px',
+                      color: '#333',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                   >
                     ⋮
@@ -637,9 +634,9 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                       background: 'white',
                       border: '1px solid #ddd',
                       borderRadius: '4px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      zIndex: 10,
-                      minWidth: '120px'
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 100,
+                      minWidth: '160px'
                     }}>
                       <button
                         onClick={() => {
@@ -650,15 +647,36 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                           display: 'block',
                           width: '100%',
                           textAlign: 'left',
-                          padding: '10px 16px',
+                          padding: '12px 16px',
                           background: 'none',
                           border: 'none',
                           borderBottom: '1px solid #eee',
                           cursor: 'pointer',
-                          fontSize: '14px'
+                          fontSize: '14px',
+                          color: '#333'
                         }}
                       >
                         ✏️ Edit Bill
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleDownloadBillDashboard(selectedBill);
+                          setShowMenu(false);
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '12px 16px',
+                          background: 'none',
+                          border: 'none',
+                          borderBottom: '1px solid #eee',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          color: '#333'
+                        }}
+                      >
+                        ⬇ Download
                       </button>
                       <button
                         onClick={() => {
@@ -668,12 +686,12 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                           display: 'block',
                           width: '100%',
                           textAlign: 'left',
-                          padding: '10px 16px',
+                          padding: '12px 16px',
                           background: 'none',
                           border: 'none',
                           cursor: 'pointer',
                           fontSize: '14px',
-                          color: 'red'
+                          color: '#d32f2f'
                         }}
                       >
                         🗑️ Delete
