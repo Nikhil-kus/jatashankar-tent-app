@@ -29,7 +29,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/new-bill" element={<CreateBill />} />
-        <Route path="/bill/:id" element={<ViewBill />} />
+        <Route path="/bill" element={<ViewBill />} />
 
         {/* Protected Routes (Owner Only) */}
         <Route

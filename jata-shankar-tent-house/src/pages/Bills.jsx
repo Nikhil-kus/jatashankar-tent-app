@@ -315,7 +315,7 @@ export default function Bills() {
 Thank you for booking with us.
 
 Download your bill:
-https://jatashankartent-app.vercel.app/bill/${bill.id}`;
+https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
     // For mobile: Try to share using Web Share API if available
     if (navigator.share) {
