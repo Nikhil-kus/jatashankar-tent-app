@@ -95,6 +95,19 @@ export default function InventoryLogs() {
         }
     };
 
+    const getItemBackgroundColor = (item) => {
+        // Priority 1: Items sent out but not returned (In != Out) -> RED
+        if (item.inQty !== item.outQty) {
+            return '#ffebee'; // Light Red
+        }
+        // Priority 2: Items booked but not fully sent (Out != Booked) -> YELLOW
+        if (item.outQty !== item.quantity) {
+            return '#fffde7'; // Light Yellow
+        }
+        // Default: All good -> WHITE
+        return 'white';
+    };
+
     if (loading) return <div className="loading">Loading inventory details...</div>;
     if (error) return <div className="error-message" style={{ margin: '20px' }}>{error}</div>;
 
@@ -113,13 +126,14 @@ export default function InventoryLogs() {
             <div className="inventory-list">
                 {items.map(item => (
                     <div key={item.id} style={{
-                        background: 'white',
+                        background: getItemBackgroundColor(item),
                         borderRadius: '8px',
                         padding: '16px',
                         marginBottom: '16px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        border: '1px solid #eee'
                     }}>
-                        <h3 style={{ margin: '0 0 12px 0', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
+                        <h3 style={{ margin: '0 0 12px 0', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '8px' }}>
                             {item.name}
                         </h3>
 
@@ -134,7 +148,7 @@ export default function InventoryLogs() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            background: '#FFF3E0',
+                            background: 'rgba(255, 243, 224, 0.5)', // Transparent Orange
                             padding: '8px',
                             borderRadius: '6px',
                             marginBottom: '8px'
