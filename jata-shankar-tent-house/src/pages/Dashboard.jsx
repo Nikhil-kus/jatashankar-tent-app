@@ -23,7 +23,9 @@ export default function Dashboard() {
     date: '',
     totalAmount: '',
     receivedAmount: '',
-    serviceTypes: []
+    serviceTypes: [],
+    items: [],
+    includeItemAmountInTotal: false // User option to add item cost to total
   });
   const [detailedBillData, setDetailedBillData] = useState({
     customerName: '',
@@ -37,9 +39,16 @@ export default function Dashboard() {
   const [newReceivedAmount, setNewReceivedAmount] = useState('');
   const [availableItems, setAvailableItems] = useState([]);
   const [creatingBill, setCreatingBill] = useState(false);
-  const [qtyModalOpen, setQtyModalOpen] = useState(false); // Added missing state
-  const [selectedItemForDetailedBill, setSelectedItemForDetailedBill] = useState(null); // Added missing state
-  const [detailedBillInputQty, setDetailedBillInputQty] = useState(1); // Added missing state
+  const [qtyModalOpen, setQtyModalOpen] = useState(false); // Added missing state for detailed bill
+  const [selectedItemForDetailedBill, setSelectedItemForDetailedBill] = useState(null);
+  const [detailedBillInputQty, setDetailedBillInputQty] = useState(1);
+
+  // Quick Bill Item states
+  const [quickQtyModalOpen, setQuickQtyModalOpen] = useState(false);
+  const [selectedItemForQuickBill, setSelectedItemForQuickBill] = useState(null);
+  const [quickBillInputQty, setQuickBillInputQty] = useState(1);
+  const [showQuickBillItems, setShowQuickBillItems] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -220,13 +229,30 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       setCreatingBill(true);
       setError('');
 
+      // Calculate item total
+      const itemsTotal = (quickBillData.items || []).reduce((sum, item) => sum + (item.rate * item.quantity), 0);
+      const enteredTotal = parseFloat(quickBillData.totalAmount);
+
+      let finalTotal = enteredTotal;
+      if (!quickBillData.includeItemAmountInTotal) {
+        // If not checked, add item total to the manually entered total
+        finalTotal = enteredTotal + itemsTotal;
+      }
+
       const billData = {
         customerName: quickBillData.customerName.trim(),
         mobileNumber: quickBillData.mobileNumber.trim(),
         address: quickBillData.address.trim(), // Added address
         date: quickBillData.date,
-        items: [],
-        total: parseFloat(quickBillData.totalAmount),
+        items: (quickBillData.items || []).map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          rate: item.rate,
+        })),
+        total: finalTotal,
+        baseTotalEntered: enteredTotal, // Store original entered total
+        includedItemAmountInTotal: quickBillData.includeItemAmountInTotal,
         isQuickBill: true,
         status: 'approved',
         createdByOwner: true,
@@ -237,12 +263,25 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         billData.receivedAmount = parseFloat(quickBillData.receivedAmount);
       }
 
-      const billId = await createBill(billData);
-      await createBooking({
-        date: quickBillData.date,
-        billId: billId,
-        customerName: quickBillData.customerName.trim(),
-      });
+      if (editingBillId) {
+        // UPDATE EXISTING QUICK BILL
+        await updateBill(editingBillId, billData);
+        alert('Quick bill updated successfully!');
+
+        // Update selectedBill if it's the one we just edited
+        if (selectedBill && selectedBill.id === editingBillId) {
+          setSelectedBill({ ...selectedBill, ...billData });
+        }
+      } else {
+        // CREATE NEW QUICK BILL
+        const billId = await createBill(billData);
+        await createBooking({
+          date: quickBillData.date,
+          billId: billId,
+          customerName: quickBillData.customerName.trim(),
+        });
+        alert('Quick bill created and booking confirmed!');
+      }
 
       setQuickBillData({
         customerName: '',
@@ -251,14 +290,17 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         date: '',
         totalAmount: '',
         receivedAmount: '',
-        serviceTypes: []
+        serviceTypes: [],
+        items: [],
+        includeItemAmountInTotal: false
       });
       setShowQuickBill(false);
+      setShowQuickBillItems(false);
+      setEditingBillId(null); // Reset editing state
 
       await fetchData();
-      alert('Quick bill created and booking confirmed!');
     } catch (err) {
-      setError('Failed to create bill: ' + err.message);
+      setError('Failed to save bill: ' + err.message);
       console.error(err);
     } finally {
       setCreatingBill(false);
@@ -348,23 +390,98 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
   // Pre-fill modal for editing
   const handleEditBill = (bill) => {
     setEditingBillId(bill.id);
-    // Ensure deep copy of items to avoid mutating selectedBill directly when editing in modal
-    // Also ensure date is in correct format (YYYY-MM-DD)
-    setDetailedBillData({
-      customerName: bill.customerName,
-      mobileNumber: bill.mobileNumber || '',
-      address: bill.address || '',
-      date: bill.date,
-      items: bill.items.map(item => ({
-        id: item.id || Date.now() + Math.random(), // Ensure ID exists
-        name: item.name,
-        quantity: item.quantity,
-        rate: item.rate
-      }))
-    });
-    setShowDetailedBill(true);
+    setSelectedBill(null); // Close the active bill view so the edit form renders
+
+    if (bill.isQuickBill) {
+      setQuickBillData({
+        customerName: bill.customerName,
+        mobileNumber: bill.mobileNumber || '',
+        address: bill.address || '',
+        date: bill.date,
+        totalAmount: bill.baseTotalEntered ? bill.baseTotalEntered.toString() : bill.total.toString(),
+        receivedAmount: bill.receivedAmount ? bill.receivedAmount.toString() : '',
+        serviceTypes: bill.serviceTypes || [],
+        items: bill.items || [],
+        includeItemAmountInTotal: bill.includedItemAmountInTotal || false
+      });
+      setShowQuickBillItems(bill.items && bill.items.length > 0);
+      setShowQuickBill(true);
+    } else {
+      // Ensure deep copy of items to avoid mutating selectedBill directly when editing in modal
+      // Also ensure date is in correct format (YYYY-MM-DD)
+      setDetailedBillData({
+        customerName: bill.customerName,
+        mobileNumber: bill.mobileNumber || '',
+        address: bill.address || '',
+        date: bill.date,
+        items: (bill.items || []).map(item => ({
+          id: item.id || Date.now() + Math.random(), // Ensure ID exists
+          name: item.name,
+          quantity: item.quantity,
+          rate: item.rate
+        }))
+      });
+      setShowDetailedBill(true);
+    }
   };
 
+  // --- QUICK BILL ITEM HANDLERS ---
+  const addItemToQuickBill = (item) => {
+    setSelectedItemForQuickBill(item);
+    setQuickBillInputQty(1);
+    setQuickQtyModalOpen(true);
+  };
+
+  const handleConfirmQuickBillQty = (e) => {
+    e.preventDefault();
+    if (!selectedItemForQuickBill) return;
+
+    const qty = parseInt(quickBillInputQty);
+    if (isNaN(qty) || qty <= 0) {
+      alert("Please enter a valid quantity");
+      return;
+    }
+
+    const currentItems = quickBillData.items || [];
+    const existing = currentItems.find(i => i.id === selectedItemForQuickBill.id);
+    if (existing) {
+      setQuickBillData({
+        ...quickBillData,
+        items: currentItems.map(i =>
+          i.id === selectedItemForQuickBill.id ? { ...i, quantity: i.quantity + qty } : i
+        )
+      });
+    } else {
+      setQuickBillData({
+        ...quickBillData,
+        items: [...currentItems, { ...selectedItemForQuickBill, quantity: qty }]
+      });
+    }
+    setQuickQtyModalOpen(false);
+    setSelectedItemForQuickBill(null);
+  };
+
+  const updateQuickBillItemQty = (itemId, quantity) => {
+    if (quantity <= 0) {
+      removeQuickBillItem(itemId);
+    } else {
+      setQuickBillData({
+        ...quickBillData,
+        items: (quickBillData.items || []).map(i =>
+          i.id === itemId ? { ...i, quantity } : i
+        )
+      });
+    }
+  };
+
+  const removeQuickBillItem = (itemId) => {
+    setQuickBillData({
+      ...quickBillData,
+      items: (quickBillData.items || []).filter(i => i.id !== itemId)
+    });
+  };
+
+  // --- DETAILED BILL ITEM HANDLERS ---
   // Add item to detailed bill - Open Modal
   const addItemToDetailedBill = (item) => {
     setSelectedItemForDetailedBill(item);
@@ -1567,6 +1684,139 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   </div>
                 </div>
 
+                {/* Quick Bill Items Selection */}
+                <div style={{ marginBottom: '16px' }}>
+                  {!showQuickBillItems ? (
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => setShowQuickBillItems(true)}
+                      style={{ background: '#F59E0B', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+                    >
+                      <span style={{ fontSize: '18px' }}>+</span>
+                      <span>Add Optional Items</span>
+                    </button>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <label style={{ fontWeight: '500', margin: 0 }}>
+                          Select Items to Add
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowQuickBillItems(false)}
+                          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                        >
+                          Hide Items
+                        </button>
+                      </div>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                        gap: '8px'
+                      }}>
+                        {availableItems.map(item => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => addItemToQuickBill(item)}
+                            style={{
+                              padding: '10px',
+                              background: '#f0f0f0',
+                              border: '2px solid #ddd',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: '500', fontSize: '12px', marginBottom: '4px' }}>
+                              {item.name}
+                            </div>
+                            <div style={{ color: '#F59E0B', fontWeight: 'bold', fontSize: '13px' }}>
+                              ₹{item.rate}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Selected Quick Bill Items */}
+                {(quickBillData.items && quickBillData.items.length > 0) && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <h3 style={{ marginBottom: '8px', fontSize: '14px' }}>Selected Items</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                      {quickBillData.items.map(item => (
+                        <div
+                          key={item.id}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '10px',
+                            background: '#f9f9f9',
+                            borderRadius: '6px',
+                            borderLeft: '4px solid #F59E0B'
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <h4 style={{ margin: '0 0 4px 0', fontSize: '13px' }}>{item.name}</h4>
+                            <p style={{ margin: '0', fontSize: '12px', color: '#666' }}>
+                              ₹{item.rate} × {item.quantity} = ₹{item.rate * item.quantity}
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => updateQuickBillItemQty(item.id, item.quantity - 1)}
+                              style={{ width: '28px', height: '28px', padding: '0', background: '#e0e0e0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}
+                            >-</button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateQuickBillItemQty(item.id, parseInt(e.target.value) || 1)}
+                              min="1"
+                              style={{ width: '40px', padding: '4px', textAlign: 'center', border: '1px solid #ddd', borderRadius: '4px' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateQuickBillItemQty(item.id, item.quantity + 1)}
+                              style={{ width: '28px', height: '28px', padding: '0', background: '#e0e0e0', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px' }}
+                            >+</button>
+                            <button
+                              type="button"
+                              onClick={() => removeQuickBillItem(item.id)}
+                              style={{ padding: '6px 10px', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                            >Remove</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '10px',
+                      background: '#fff9c4',
+                      border: '1px solid #fbc02d',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={quickBillData.includeItemAmountInTotal}
+                        onChange={(e) => setQuickBillData({ ...quickBillData, includeItemAmountInTotal: e.target.checked })}
+                        style={{ marginRight: '8px', cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      <span style={{ fontSize: '13px', fontWeight: '500', color: '#f57f17' }}>
+                        Include item amount on bill (Do not add extra to typed Total)
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 {/* Service Types Selection */}
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
@@ -1626,9 +1876,13 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     alignItems: 'center'
                   }}>
                     <div>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Total Amount</p>
+                      <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>
+                        {(!quickBillData.includeItemAmountInTotal && quickBillData.items && quickBillData.items.length > 0) ? 'Calculated Final Total' : 'Total Amount'}
+                      </p>
                       <p style={{ margin: '0', fontSize: '18px', fontWeight: 'bold', color: '#2196f3' }}>
-                        ₹{quickBillData.totalAmount}
+                        ₹{(!quickBillData.includeItemAmountInTotal && quickBillData.items)
+                          ? parseFloat(quickBillData.totalAmount || 0) + quickBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0)
+                          : quickBillData.totalAmount}
                       </p>
                     </div>
                     {quickBillData.receivedAmount && (
@@ -1645,9 +1899,13 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                             margin: '0',
                             fontSize: '16px',
                             fontWeight: 'bold',
-                            color: parseFloat(quickBillData.totalAmount) - parseFloat(quickBillData.receivedAmount) > 0 ? '#f44336' : '#4caf50'
+                            color: ((!quickBillData.includeItemAmountInTotal && quickBillData.items)
+                              ? parseFloat(quickBillData.totalAmount || 0) + quickBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0)
+                              : parseFloat(quickBillData.totalAmount)) - parseFloat(quickBillData.receivedAmount) > 0 ? '#f44336' : '#4caf50'
                           }}>
-                            ₹{parseFloat(quickBillData.totalAmount) - parseFloat(quickBillData.receivedAmount || 0)}
+                            ₹{((!quickBillData.includeItemAmountInTotal && quickBillData.items)
+                              ? parseFloat(quickBillData.totalAmount || 0) + quickBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0)
+                              : parseFloat(quickBillData.totalAmount)) - parseFloat(quickBillData.receivedAmount || 0)}
                           </p>
                         </div>
                       </>
@@ -1668,7 +1926,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     type="button"
                     onClick={() => {
                       closeModal();
-                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: [] });
+                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: [], items: [], includeItemAmountInTotal: false });
+                      setShowQuickBillItems(false);
                     }}
                     className="btn-cancel"
                     style={{ flex: 1 }}
@@ -1683,7 +1942,6 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           {/* Grouped Bills Rendering */}
           {bills.length > 0 && (
             <div className="section" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
-
               {/* Pending Action Required */}
               {pendingBillsList.length > 0 && (
                 <div style={{ marginBottom: '32px' }}>
@@ -1829,6 +2087,36 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 >
                   Add Items
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Bill Quantity Modal */}
+      {quickQtyModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+        }}>
+          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '350px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
+              Quantity for {selectedItemForQuickBill?.name}
+            </h3>
+            <form onSubmit={handleConfirmQuickBillQty}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Enter Quantity:</label>
+                <input
+                  type="number"
+                  value={quickBillInputQty}
+                  onChange={(e) => setQuickBillInputQty(e.target.value)}
+                  min="1" autoFocus
+                  style={{ width: '100%', padding: '12px', fontSize: '18px', border: '2px solid #D97706', borderRadius: '4px', textAlign: 'center' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => setQuickQtyModalOpen(false)} style={{ flex: 1, padding: '10px', border: '1px solid #ddd', background: '#f5f5f5', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" style={{ flex: 1, padding: '10px', background: '#D97706', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add Items</button>
               </div>
             </form>
           </div>
