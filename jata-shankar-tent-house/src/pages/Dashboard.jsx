@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../services/authService';
 import { getAllBills, getAllBookings, createBill, createBooking, updateBillStatus, getItems, updateBill } from '../services/firestoreService'; // Added updateBill
-import { db } from '../firebase/firebaseConfig';
+import { db, auth } from '../firebase/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import '../styles/pages.css';
 
@@ -23,7 +23,7 @@ export default function Dashboard() {
     date: '',
     totalAmount: '',
     receivedAmount: '',
-    serviceTypes: [],
+    serviceTypes: localStorage.getItem('role') === 'palace' ? ['Palace'] : [],
     items: [],
     includeItemAmountInTotal: false // User option to add item cost to total
   });
@@ -49,6 +49,11 @@ export default function Dashboard() {
   const [quickBillInputQty, setQuickBillInputQty] = useState(1);
   const [showQuickBillItems, setShowQuickBillItems] = useState(false);
 
+  // Payment History states
+  const [showPaymentMenu, setShowPaymentMenu] = useState(false);
+  const [showPaymentHistoryModal, setShowPaymentHistoryModal] = useState(false);
+
+  const isPalaceOwner = localStorage.getItem('role') === 'palace';
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -58,11 +63,22 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [billsData, bookingsData, itemsData] = await Promise.all([
+      const isPalaceOwner = localStorage.getItem('role') === 'palace';
+
+      let [billsData, bookingsData, itemsData] = await Promise.all([
         getAllBills(),
         getAllBookings(),
         getItems(),
       ]);
+
+      if (isPalaceOwner) {
+        billsData = billsData.filter(bill => bill.serviceTypes && bill.serviceTypes.includes('Palace'));
+
+        // Extract the IDs of Palace bills to filter bookings associated with them
+        const palaceBillIds = billsData.map(b => b.id);
+        bookingsData = bookingsData.filter(booking => palaceBillIds.includes(booking.billId));
+      }
+
       setBills(billsData);
       setBookings(bookingsData);
       setAvailableItems(itemsData);
@@ -239,6 +255,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         finalTotal = enteredTotal + itemsTotal;
       }
 
+      const isAutoApproved = !isPalaceOwner || quickBillData.serviceTypes.includes('Palace');
+
       const billData = {
         customerName: quickBillData.customerName.trim(),
         mobileNumber: quickBillData.mobileNumber.trim(),
@@ -254,13 +272,23 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         baseTotalEntered: enteredTotal, // Store original entered total
         includedItemAmountInTotal: quickBillData.includeItemAmountInTotal,
         isQuickBill: true,
-        status: 'approved',
+        status: isAutoApproved ? 'approved' : 'pending',
         createdByOwner: true,
         serviceTypes: quickBillData.serviceTypes, // Add service types
       };
 
       if (quickBillData.receivedAmount && !isNaN(quickBillData.receivedAmount)) {
-        billData.receivedAmount = parseFloat(quickBillData.receivedAmount);
+        const received = parseFloat(quickBillData.receivedAmount);
+        billData.receivedAmount = received;
+
+        // Add initial payment to history if creating a new bill
+        if (!editingBillId && received > 0) {
+          billData.paymentHistory = [{
+            amount: received,
+            date: new Date().toISOString(),
+            updatedBy: isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin')
+          }];
+        }
       }
 
       if (editingBillId) {
@@ -275,12 +303,16 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       } else {
         // CREATE NEW QUICK BILL
         const billId = await createBill(billData);
-        await createBooking({
-          date: quickBillData.date,
-          billId: billId,
-          customerName: quickBillData.customerName.trim(),
-        });
-        alert('Quick bill created and booking confirmed!');
+        if (isAutoApproved) {
+          await createBooking({
+            date: quickBillData.date,
+            billId: billId,
+            customerName: quickBillData.customerName.trim(),
+          });
+          alert('Quick bill created and booking confirmed!');
+        } else {
+          alert('Quick bill created and sent for owner approval!');
+        }
       }
 
       setQuickBillData({
@@ -290,7 +322,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         date: '',
         totalAmount: '',
         receivedAmount: '',
-        serviceTypes: [],
+        serviceTypes: isPalaceOwner ? ['Palace'] : [],
         items: [],
         includeItemAmountInTotal: false
       });
@@ -342,7 +374,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           rate: item.rate,
         })),
         total: total,
-        status: 'approved',
+        status: isPalaceOwner ? 'pending' : 'approved',
         createdByOwner: true,
         isQuickBill: false,
         serviceTypes: ['Tent'], // All detailed bills are automatically 'Tent'
@@ -360,12 +392,16 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       } else {
         // CREATE NEW BILL
         const billId = await createBill(billData);
-        await createBooking({
-          date: detailedBillData.date,
-          billId: billId,
-          customerName: detailedBillData.customerName.trim(),
-        });
-        alert('Detailed bill created and booking confirmed!');
+        if (!isPalaceOwner) {
+          await createBooking({
+            date: detailedBillData.date,
+            billId: billId,
+            customerName: detailedBillData.customerName.trim(),
+          });
+          alert('Detailed bill created and booking confirmed!');
+        } else {
+          alert('Detailed bill created and sent for owner approval!');
+        }
       }
 
       setDetailedBillData({
@@ -596,15 +632,28 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
     try {
       setUpdating(true);
+      const newAmount = parseFloat(newReceivedAmount);
+
+      const newHistoryEntry = {
+        amount: newAmount,
+        date: new Date().toISOString(),
+        updatedBy: isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin')
+      };
+
+      const existingHistory = selectedBill.paymentHistory || [];
+      const updatedHistory = [...existingHistory, newHistoryEntry];
+
       const billRef = doc(db, 'bills', selectedBill.id);
       await updateDoc(billRef, {
-        receivedAmount: parseFloat(newReceivedAmount)
+        receivedAmount: newAmount,
+        paymentHistory: updatedHistory
       });
 
       // Update local state
       const updatedBill = {
         ...selectedBill,
-        receivedAmount: parseFloat(newReceivedAmount)
+        receivedAmount: newAmount,
+        paymentHistory: updatedHistory
       };
       setSelectedBill(updatedBill);
       setEditingPayment(false);
@@ -633,6 +682,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('role');
       await logoutUser();
       navigate('/');
     } catch (err) {
@@ -729,7 +779,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
                     'Palace': { bg: '#E0F2F1', text: '#00695C' },
                     'DJ': { bg: '#EEE', text: '#333' },
-                    'Roadlight': { bg: '#EDE7F6', text: '#512DA8' }
+                    'Roadlight': { bg: '#EDE7F6', text: '#512DA8' },
+                    'Rath': { bg: '#FFF3E0', text: '#E65100' }
                   };
                   const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
                   return (
@@ -958,26 +1009,28 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
 
 
-            {/* Inventory Management Section */}
-            <div style={{ marginBottom: '16px', padding: '10px', background: '#e3f2fd', borderRadius: '6px' }}>
-              <h3 style={{ fontSize: '14px', margin: '0 0 8px 0', color: '#1565c0' }}>Items Inventory Tracking</h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => handleOpenInventory(selectedBill)}
-                  className="btn-primary"
-                  style={{ background: '#1565c0', padding: '6px 12px', fontSize: '12px', flex: 1 }}
-                >
-                  📦 Manage Logs
-                </button>
-                <button
-                  onClick={() => handleShareInventory(selectedBill)}
-                  className="btn-primary"
-                  style={{ background: '#00897b', padding: '6px 12px', fontSize: '12px', flex: 1 }}
-                >
-                  📱 Share Link
-                </button>
+            {/* Inventory Management Section - Hidden for Palace Owner */}
+            {!isPalaceOwner && (
+              <div style={{ marginBottom: '16px', padding: '10px', background: '#e3f2fd', borderRadius: '6px' }}>
+                <h3 style={{ fontSize: '14px', margin: '0 0 8px 0', color: '#1565c0' }}>Items Inventory Tracking</h3>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleOpenInventory(selectedBill)}
+                    className="btn-primary"
+                    style={{ background: '#1565c0', padding: '6px 12px', fontSize: '12px', flex: 1 }}
+                  >
+                    📦 Manage Logs
+                  </button>
+                  <button
+                    onClick={() => handleShareInventory(selectedBill)}
+                    className="btn-primary"
+                    style={{ background: '#00897b', padding: '6px 12px', fontSize: '12px', flex: 1 }}
+                  >
+                    📱 Share Link
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {selectedBill.items && selectedBill.items.length > 0 && (
               <div style={{ marginBottom: '16px' }}>
@@ -1059,11 +1112,47 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 padding: '16px',
                 borderRadius: '6px',
                 marginTop: '16px',
-                border: '2px solid #4caf50'
+                border: '2px solid #4caf50',
+                position: 'relative'
               }}>
-                <h3 style={{ marginBottom: '12px', fontSize: '16px', color: '#2e7d32', marginTop: 0 }}>
-                  Payment Details
-                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '16px', color: '#2e7d32', margin: 0 }}>
+                    Payment Details
+                  </h3>
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowPaymentMenu(!showPaymentMenu)}
+                      style={{
+                        background: 'none', border: 'none', fontSize: '20px',
+                        cursor: 'pointer', color: '#333', padding: '0 8px'
+                      }}
+                    >
+                      ⋮
+                    </button>
+                    {showPaymentMenu && (
+                      <div style={{
+                        position: 'absolute', right: 0, top: '100%',
+                        background: 'white', border: '1px solid #ddd',
+                        borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 100, minWidth: '150px'
+                      }}>
+                        <button
+                          onClick={() => {
+                            setShowPaymentHistoryModal(true);
+                            setShowPaymentMenu(false);
+                          }}
+                          style={{
+                            display: 'block', width: '100%', textAlign: 'left',
+                            padding: '12px 16px', background: 'none', border: 'none',
+                            cursor: 'pointer', fontSize: '13px'
+                          }}
+                        >
+                          🕒 Check History
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {!editingPayment ? (
                   <div>
@@ -1078,7 +1167,9 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                       </span>
                     </div>
                     <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                      <span style={{ fontWeight: '500' }}>Balance:</span>
+                      <span style={{
+                        fontWeight: '500'
+                      }}>Balance:</span>
                       <span style={{
                         color: (selectedBill.total - (selectedBill.receivedAmount || 0)) > 0 ? '#f44336' : '#4caf50',
                         fontWeight: 'bold'
@@ -1233,50 +1324,52 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             >
               View Calendar
             </button>
-            {/* 3-Dot Menu */}
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="btn-primary"
-                style={{ background: '#6B7280', boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)', padding: '8px 14px', fontSize: '13px' }}
-              >
-                ⋮ Menu
-              </button>
-              {showMenu && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  background: 'white',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  zIndex: 1000,
-                  minWidth: '200px',
-                  marginTop: '4px'
-                }}>
+            {/* 3-Dot Menu - Hidden for Palace Owner */}
+            {!isPalaceOwner && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="btn-primary"
+                  style={{ background: '#6B7280', boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)', padding: '8px 14px', fontSize: '13px' }}
+                >
+                  ⋮ Menu
+                </button>
+                {showMenu && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    zIndex: 1000,
+                    minWidth: '200px',
+                    marginTop: '4px'
+                  }}>
 
-                  <button
-                    onClick={() => {
-                      navigate('/items');
-                      setShowMenu(false);
-                    }}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    ðŸ·ï¸ Manage Items & Prices
-                  </button>
-                </div>
-              )}
-            </div>
+                    <button
+                      onClick={() => {
+                        navigate('/items');
+                        setShowMenu(false);
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '12px 16px',
+                        border: 'none',
+                        background: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      ðŸ·ï¸ Manage Items & Prices
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Detailed Bill Form */}
@@ -1827,7 +1920,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
                     gap: '8px'
                   }}>
-                    {['Tent', 'Palace', 'DJ', 'Roadlight'].map(service => (
+                    {['Tent', 'Palace', 'DJ', 'Roadlight', 'Rath'].map(service => (
                       <label
                         key={service}
                         style={{
@@ -1926,7 +2019,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     type="button"
                     onClick={() => {
                       closeModal();
-                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: [], items: [], includeItemAmountInTotal: false });
+                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: isPalaceOwner ? ['Palace'] : [], items: [], includeItemAmountInTotal: false });
                       setShowQuickBillItems(false);
                     }}
                     className="btn-cancel"
@@ -2119,6 +2212,52 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                 <button type="submit" style={{ flex: 1, padding: '10px', background: '#D97706', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add Items</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Payment History Modal */}
+      {showPaymentHistoryModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000
+        }}>
+          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0, color: '#2e7d32' }}>Payment Update History</h3>
+              <button
+                onClick={() => setShowPaymentHistoryModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {(!selectedBill?.paymentHistory || selectedBill.paymentHistory.length === 0) ? (
+                <p style={{ color: '#666', textAlign: 'center', marginTop: '20px' }}>No payment history recorded yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {selectedBill.paymentHistory.map((entry, index) => (
+                    <div key={index} style={{
+                      padding: '12px', border: '1px solid #e0e0e0', borderRadius: '6px', background: '#f9f9f9'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#4caf50' }}>₹{entry.amount}</span>
+                        <span style={{ fontSize: '12px', color: '#666' }}>
+                          {new Date(entry.date).toLocaleString()}
+                        </span>
+                      </div>
+                      {selectedBill?.serviceTypes?.includes('Palace') && (
+                        <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
+                          Updated by: {entry.updatedBy || 'Unknown User'}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

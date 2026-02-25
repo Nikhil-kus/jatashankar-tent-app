@@ -31,8 +31,8 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // If user is authenticated, render the component
-  if (user) {
+  // If user is authenticated via Firebase OR local role bypass is active
+  if (user || localStorage.getItem('role') === 'palace') {
     return children;
   }
 

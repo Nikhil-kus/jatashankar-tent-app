@@ -12,8 +12,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in or if local role bypass exists
   useEffect(() => {
+    // Check local role first (Palace Owner bypass)
+    const localRole = localStorage.getItem('role');
+    if (localRole === 'palace') {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         navigate('/dashboard', { replace: true });
@@ -26,6 +33,13 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // SPECIAL BYPASS FOR PALACE OWNER
+    if (password === '55555') {
+      localStorage.setItem('role', 'palace');
+      navigate('/dashboard');
+      return; // Stop normal auth flow
+    }
 
     try {
       await loginUser(email, password);
