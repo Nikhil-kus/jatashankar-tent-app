@@ -527,42 +527,106 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
   const approvedBills = bills.filter(b => b.status === 'approved');
   const todayBookings = bookings.filter(b => b.date === new Date().toISOString().split('T')[0]);
 
-  // Sort bills same as Bills Management: past (newest first) + nearest + future (nearest first)
-  const sortedBillsForDashboard = () => {
-    const today = new Date().toISOString().split('T')[0];
+  // Setup Grouped Data for Dashboard
+  const todayStr = new Date().toISOString().split('T')[0];
+  const pendingBillsList = bills.filter(b => b.status === 'pending');
 
-    const past = [];
-    const upcoming = [];
-    let nearest = null;
+  const approvedBillsList = bills.filter(b => b.status === 'approved');
 
-    bills.forEach(bill => {
-      // Only consider approved bills for nearest event
-      if (bill.status === 'approved') {
-        if (bill.date < today) {
-          past.push(bill);
-        } else if (bill.date === today) {
-          nearest = bill;
-        } else {
-          upcoming.push(bill);
-        }
-      }
-    });
+  // Find nearest (first upcoming)
+  const upcomingAll = approvedBillsList.filter(b => b.date >= todayStr).sort((a, b) => new Date(a.date) - new Date(b.date));
+  let nearestBillObj = null;
+  if (upcomingAll.length > 0) {
+    nearestBillObj = upcomingAll[0];
+  }
 
-    // Sort past bills by date (newest first)
-    past.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Remove nearest from upcoming so we don't duplicate it
+  const upcomingRemaining = nearestBillObj ? upcomingAll.filter(b => b.id !== nearestBillObj.id) : upcomingAll;
 
-    // Sort upcoming bills by date (nearest first)
-    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const pastBillsList = approvedBillsList.filter(b => b.date < todayStr).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Add pending bills at the beginning
-    const pending = bills.filter(b => b.status === 'pending');
+  // Group by date
+  const groupBills = (list) => {
+    return list.reduce((acc, bill) => {
+      if (!acc[bill.date]) acc[bill.date] = [];
+      acc[bill.date].push(bill);
+      return acc;
+    }, {});
+  };
 
-    // Combine: pending + past + nearest + upcoming
-    const result = [...pending, ...past];
-    if (nearest) result.push(nearest);
-    result.push(...upcoming);
+  const groupedUpcoming = groupBills(upcomingRemaining);
+  const groupedPast = groupBills(pastBillsList);
 
-    return result;
+  const renderBillCard = (bill, isNearest = false) => {
+    const dateObj = new Date(bill.date + 'T00:00:00');
+    const day = dateObj.getDate();
+    const month = dateObj.toLocaleString('en-US', { month: 'short' });
+
+    return (
+      <div
+        key={bill.id}
+        onClick={() => openModal('bill_details', bill)}
+        className={`bill-card ${isNearest ? 'nearest' : bill.status}`}
+      >
+        <div className="bill-card-left">
+          <div className="bill-header-row">
+            <h4 className="customer-name">{bill.customerName}</h4>
+            {isNearest && <span className="nearest-badge">NEAREST</span>}
+          </div>
+          <div className="date-row">
+            <div className={`date-box ${isNearest ? 'nearest' : ''}`}>
+              <span className="date-day">{day}</span>
+              <span className="date-month">{month}</span>
+            </div>
+            <span className="full-date">{bill.date}</span>
+          </div>
+        </div>
+        {bill.status === 'pending' && (
+          <div className="bill-card-middle">
+            <div className="action-buttons-row" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => handleApproveBill(bill.id)} disabled={updating} className="btn-action approve">✓ Approve</button>
+              <button onClick={() => handleRejectBill(bill.id)} disabled={updating} className="btn-action reject">✕ Reject</button>
+            </div>
+          </div>
+        )}
+        <div className="bill-card-right">
+          {bill.status !== 'approved' && (
+            <span className={`status-badge`} style={{ backgroundColor: bill.status === 'pending' ? '#FF5252' : '#FF9800', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
+              {bill.status.toUpperCase()}
+            </span>
+          )}
+          <div className="amount-group">
+            <p className="total-amount">₹{bill.total}</p>
+            {bill.receivedAmount && (
+              <div className="received-group">
+                <span style={{ fontSize: '10px', color: '#666' }}>Received</span>
+                <span className="received-amount">₹{bill.receivedAmount}</span>
+              </div>
+            )}
+          </div>
+          <div className="services-container">
+            {bill.serviceTypes && bill.serviceTypes.length > 0 && (
+              <div className="tags-row">
+                {bill.serviceTypes.map((service, idx) => {
+                  const serviceColors = {
+                    'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
+                    'Palace': { bg: '#E0F2F1', text: '#00695C' },
+                    'DJ': { bg: '#EEE', text: '#333' },
+                    'Roadlight': { bg: '#EDE7F6', text: '#512DA8' }
+                  };
+                  const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
+                  return (
+                    <span key={idx} className="service-tag" style={{ backgroundColor: colors.bg, color: colors.text }}>
+                      {service}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1074,25 +1138,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   minWidth: '200px',
                   marginTop: '4px'
                 }}>
-                  <button
-                    onClick={() => {
-                      navigate('/bills');
-                      setShowMenu(false);
-                    }}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: 'none',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      borderBottom: '1px solid #eee'
-                    }}
-                  >
-                    📋 View All Bills
-                  </button>
+
                   <button
                     onClick={() => {
                       navigate('/items');
@@ -1634,126 +1680,68 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             </div>
           )}
 
-          {/* All Bills - Show list when no bill is selected */}
+          {/* Grouped Bills Rendering */}
           {bills.length > 0 && (
-            <div className="section">
-              <h2>All Bills ({bills.length})</h2>
-              <div className="bills-list">
-                {sortedBillsForDashboard().slice(0, 5).map(bill => {
-                  // Format date to show day and month clearly
-                  const dateObj = new Date(bill.date + 'T00:00:00');
-                  const day = dateObj.getDate();
-                  const month = dateObj.toLocaleString('en-US', { month: 'short' });
+            <div className="section" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
 
-                  // Check if this is today's or nearest upcoming event (only for approved bills)
-                  const today = new Date().toISOString().split('T')[0];
-                  const isNearest = bill.status === 'approved' && (bill.date === today ||
-                    (bill.date > today && !sortedBillsForDashboard().some(b => b.status === 'approved' && b.date > today && b.date < bill.date)));
+              {/* Pending Action Required */}
+              {pendingBillsList.length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h3 style={{ fontSize: '18px', color: '#d32f2f', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ background: '#ffebee', padding: '6px 12px', borderRadius: '6px' }}>⚠️ Action Required</span>
+                  </h3>
+                  <div className="bills-row">
+                    {pendingBillsList.map(b => renderBillCard(b, false))}
+                  </div>
+                </div>
+              )}
 
-                  return (
-                    <div
-                      key={bill.id}
-                      onClick={() => openModal('bill_details', bill)}
-                      className={`bill-card ${isNearest ? 'nearest' : bill.status}`}
-                    >
-                      {/* Left Side - Info */}
-                      <div className="bill-card-left">
-                        <div className="bill-header-row">
-                          <h4 className="customer-name">{bill.customerName}</h4>
-                          {isNearest && <span className="nearest-badge">NEAREST</span>}
-                        </div>
+              {/* Nearest Event */}
+              {nearestBillObj && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h3 style={{ fontSize: '18px', color: '#f57f17', marginBottom: '16px', paddingLeft: '4px' }}>Nearest Event</h3>
+                  <div className="bills-row">
+                    {renderBillCard(nearestBillObj, true)}
+                  </div>
+                </div>
+              )}
 
-                        <div className="date-row">
-                          <div className={`date-box ${isNearest ? 'nearest' : ''}`}>
-                            <span className="date-day">{day}</span>
-                            <span className="date-month">{month}</span>
-                          </div>
-                          <span className="full-date">{bill.date}</span>
-                        </div>
-                      </div>
-
-                      {/* Middle Side - Services & Actions */}
-
-
-                      {bill.status === 'pending' && (
-                        <div className="bill-card-middle">
-                          <div className="action-buttons-row" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => handleApproveBill(bill.id)}
-                              disabled={updating}
-                              className="btn-action approve"
-                            >
-                              ✓ Approve
-                            </button>
-                            <button
-                              onClick={() => handleRejectBill(bill.id)}
-                              disabled={updating}
-                              className="btn-action reject"
-                            >
-                              ✕ Reject
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Right Side - Amounts & Status */}
-                      <div className="bill-card-right">
-                        {/* Status Badge */}
-                        {bill.status !== 'approved' && (
-                          <span className={`status-badge`} style={{
-                            backgroundColor: bill.status === 'pending' ? '#FF5252' : '#FF9800',
-                          }}>
-                            {bill.status}
-                          </span>
-                        )}
-
-                        {/* Amount Group */}
-                        <div className="amount-group">
-                          <p className="total-amount">₹{bill.total}</p>
-
-                          {bill.receivedAmount && (
-                            <div className="received-group">
-                              <span style={{ fontSize: '10px', color: '#666' }}>Received</span>
-                              <span className="received-amount">₹{bill.receivedAmount}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Service Tags */}
-                        <div className="services-container">
-                          {bill.serviceTypes && bill.serviceTypes.length > 0 && (
-                            <div className="tags-row">
-                              {bill.serviceTypes.map((service, idx) => {
-                                const serviceColors = {
-                                  'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
-                                  'Palace': { bg: '#E0F2F1', text: '#00695C' },
-                                  'DJ': { bg: '#EEE', text: '#333' },
-                                  'Roadlight': { bg: '#EDE7F6', text: '#512DA8' }
-                                };
-                                const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
-                                return (
-                                  <span
-                                    key={idx}
-                                    className="service-tag"
-                                    style={{
-                                      backgroundColor: colors.bg,
-                                      color: colors.text
-                                    }}
-                                  >
-                                    {service}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-
+              {/* Upcoming Events */}
+              {Object.keys(groupedUpcoming).length > 0 && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h3 style={{ fontSize: '18px', color: '#333', marginBottom: '16px', paddingLeft: '4px' }}>Upcoming Dates</h3>
+                  {Object.keys(groupedUpcoming).sort((a, b) => new Date(a) - new Date(b)).map(date => (
+                    <div key={date} style={{ marginBottom: '24px' }}>
+                      <h4 className="date-group-header">
+                        {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                      </h4>
+                      <div className="bills-row">
+                        {groupedUpcoming[date].map(b => renderBillCard(b, false))}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Past Events */}
+              {Object.keys(groupedPast).length > 0 && (
+                <details className="past-bills-accordion">
+                  <summary className="past-bills-summary">📁 View Past Event Bills ({pastBillsList.length})</summary>
+                  <div className="past-bills-content">
+                    {Object.keys(groupedPast).sort((a, b) => new Date(b) - new Date(a)).map(date => (
+                      <div key={date} style={{ marginBottom: '24px' }}>
+                        <h4 className="date-group-header past">
+                          {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                        </h4>
+                        <div className="bills-row">
+                          {groupedPast[date].map(b => renderBillCard(b, false))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+
             </div>
           )}
         </div>

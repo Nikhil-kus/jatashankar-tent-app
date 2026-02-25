@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CreateBill from './pages/CreateBill';
-import Bills from './pages/Bills';
+
 import Calendar from './pages/Calendar';
 import Items from './pages/Items';
 import ViewBill from './pages/ViewBill';
@@ -18,7 +18,7 @@ import './styles/pages.css';
  * - /login : Owner login (public)
  * - /new-bill : Create new bill (public)
  * - /dashboard : Owner dashboard (protected)
- * - /bills : Bills management (protected)
+
  * - /calendar : Booking calendar (protected)
  * - /items : Manage items & prices (protected)
  */
@@ -42,14 +42,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/bills"
-          element={
-            <ProtectedRoute>
-              <Bills />
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/calendar"
           element={

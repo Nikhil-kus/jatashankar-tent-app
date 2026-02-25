@@ -604,6 +604,16 @@ button {
     grid-template-columns: 1fr;
   }
 
+  /* Make horizontal rows take full width and hide card max widths on mobile */
+  .bills-row {
+    padding: 4px 0 16px 0;
+  }
+
+  .bills-row .bill-card {
+    min-width: 85vw;
+    /* Almost full width on very small screens */
+  }
+
   .bill-card {
     flex-direction: column;
     height: auto !important;
@@ -729,9 +739,91 @@ button {
 .bills-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 600px;
-  overflow-y: auto;
+  gap: 16px;
+}
+
+/* New Grouped Layout Styles */
+.date-group-header {
+  font-size: 15px;
+  color: #475569;
+  margin: 0 0 12px 4px;
+  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 6px;
+  display: inline-block;
+}
+
+.date-group-header.past {
+  color: #94a3b8;
+  border-bottom-color: #f1f5f9;
+}
+
+.bills-row {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 16px;
+  padding: 4px 4px 16px 4px;
+  /* padding for shadows and scrollbar spacing */
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+}
+
+.bills-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.bills-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bills-row::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+
+.bills-row .bill-card {
+  min-width: 310px;
+  max-width: 350px;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  margin-bottom: 0;
+  /* Override old margin since gap handles it now */
+}
+
+/* Accordion for Past Bills */
+.past-bills-accordion {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid #f1f5f9;
+}
+
+.past-bills-summary {
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  list-style: none;
+  /* Hide default arrow in some browsers */
+  background: #f8fafc;
+  transition: background 0.2s;
+}
+
+.past-bills-summary:hover {
+  background: #f1f5f9;
+}
+
+.past-bills-summary::-webkit-details-marker {
+  display: none;
+  /* Hide default arrow in Safari/Chrome */
+}
+
+.past-bills-content {
+  padding: 20px;
+  border-top: 1px dashed #e2e8f0;
 }
 
 .bill-list-item {
@@ -761,20 +853,22 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: stretch;
-  background: white;
-  border-radius: 12px;
-  margin-bottom: 12px;
+  background: #ffffff;
+  border-radius: 16px;
+  margin-bottom: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03);
   position: relative;
+  cursor: pointer;
 }
 
 .bill-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
   z-index: 1;
+  border-color: rgba(33, 150, 243, 0.2);
 }
 
 .bill-card.pending {
@@ -808,22 +902,24 @@ button {
 }
 
 .customer-name {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  color: #2c3e50;
+  color: #1e293b;
   margin: 0;
   text-transform: capitalize;
+  letter-spacing: -0.3px;
 }
 
 .nearest-badge {
-  background: #FFF9C4;
-  color: #F57F17;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 12px;
+  background: linear-gradient(135deg, #FFB75E 0%, #ED8F03 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
   letter-spacing: 0.5px;
-  border: 1px solid #FBC02D;
+  border: none;
+  box-shadow: 0 2px 6px rgba(237, 143, 3, 0.3);
 }
 
 .date-row {
@@ -833,21 +929,21 @@ button {
 }
 
 .date-box {
-  background: #E3F2FD;
-  color: #1976D2;
-  padding: 6px 12px;
-  border-radius: 8px;
+  background: #f1f5f9;
+  color: #3b82f6;
+  padding: 8px 14px;
+  border-radius: 10px;
   text-align: center;
-  min-width: 60px;
+  min-width: 64px;
   display: flex;
   flex-direction: column;
-  border: 1px solid #BBDEFB;
+  border: 1px solid #e2e8f0;
 }
 
 .date-box.nearest {
-  background: #FBC02D;
-  color: #3e2723;
-  border: 1px solid #F9A825;
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde047;
 }
 
 .date-day {
@@ -976,11 +1072,10 @@ button {
 }
 
 .total-amount {
-  font-size: 16px;
-  /* Slightly smaller */
-  font-weight: 700;
-  color: #333;
-  font-family: 'Roboto', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #16a34a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.2;
 }
 
