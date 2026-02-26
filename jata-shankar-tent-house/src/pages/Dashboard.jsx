@@ -21,8 +21,9 @@ export default function Dashboard() {
     mobileNumber: '',
     address: '', // Added address
     date: '',
-    date: '',
     receivedAmount: '',
+    useSingleTotal: false, // New property for lumped sum
+    totalAmount: '',      // New property
     serviceTypes: localStorage.getItem('role') === 'palace' ? ['Palace'] : [],
     serviceAmounts: {},
     items: [],
@@ -245,11 +246,18 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
 
     // Validate that each selected service has a valid positive amount
-    for (const service of quickBillData.serviceTypes) {
-      const amt = quickBillData.serviceAmounts[service];
-      if (!amt || isNaN(amt) || parseFloat(amt) < 0) {
-        setError(`Please enter a valid amount for ${service}`);
+    if (quickBillData.useSingleTotal) {
+      if (!quickBillData.totalAmount || isNaN(quickBillData.totalAmount) || parseFloat(quickBillData.totalAmount) < 0) {
+        setError('Please enter a valid total amount');
         return;
+      }
+    } else {
+      for (const service of quickBillData.serviceTypes) {
+        const amt = quickBillData.serviceAmounts[service];
+        if (!amt || isNaN(amt) || parseFloat(amt) < 0) {
+          setError(`Please enter a valid amount for ${service}`);
+          return;
+        }
       }
     }
 
@@ -272,9 +280,20 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       // Calculate item total
       const itemsTotal = (quickBillData.items || []).reduce((sum, item) => sum + (item.rate * item.quantity), 0);
 
-      const enteredTotal = quickBillData.serviceTypes.reduce((sum, service) => {
-        return sum + (parseFloat(quickBillData.serviceAmounts[service]) || 0);
-      }, 0);
+      let enteredTotal = 0;
+      let finalServiceAmounts = {};
+
+      if (quickBillData.useSingleTotal) {
+        enteredTotal = parseFloat(quickBillData.totalAmount) || 0;
+      } else {
+        enteredTotal = quickBillData.serviceTypes.reduce((sum, service) => {
+          return sum + (parseFloat(quickBillData.serviceAmounts[service]) || 0);
+        }, 0);
+        finalServiceAmounts = quickBillData.serviceTypes.reduce((acc, curr) => {
+          acc[curr] = parseFloat(quickBillData.serviceAmounts[curr]) || 0;
+          return acc;
+        }, {});
+      }
 
       let finalTotal = enteredTotal;
       if (!quickBillData.includeItemAmountInTotal) {
@@ -302,10 +321,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         status: isAutoApproved ? 'approved' : 'pending',
         createdByOwner: true,
         serviceTypes: quickBillData.serviceTypes, // Add service types
-        serviceAmounts: quickBillData.serviceTypes.reduce((acc, curr) => {
-          acc[curr] = parseFloat(quickBillData.serviceAmounts[curr]) || 0;
-          return acc;
-        }, {}) // Store individual service amounts
+        total: finalTotal,
+        baseTotalEntered: enteredTotal, // Store original entered total
+        useSingleTotal: quickBillData.useSingleTotal,
+        includedItemAmountInTotal: quickBillData.includeItemAmountInTotal,
+        serviceAmounts: finalServiceAmounts // Store individual service amounts ONLY if useSingleTotal is false
       };
 
       if (quickBillData.receivedAmount && !isNaN(quickBillData.receivedAmount)) {
@@ -461,20 +481,24 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     setSelectedBill(null); // Close the active bill view so the edit form renders
 
     if (bill.isQuickBill) {
-      // Restore service amounts, checking for legacy format where only total was stored
       let restoredServiceAmounts = bill.serviceAmounts || {};
+      let isSingleTotal = bill.useSingleTotal || false;
+      let singleTotal = '';
+
       if (!bill.serviceAmounts && bill.serviceTypes && bill.serviceTypes.length > 0) {
-        restoredServiceAmounts = {
-          [bill.serviceTypes[0]]: bill.baseTotalEntered || bill.total
-        };
+        isSingleTotal = true;
+        singleTotal = bill.baseTotalEntered || bill.total || '';
+      } else if (bill.useSingleTotal) {
+        singleTotal = bill.baseTotalEntered || bill.total || '';
       }
 
       setQuickBillData({
-
         customerName: bill.customerName,
         mobileNumber: bill.mobileNumber || '',
         address: bill.address || '',
         date: bill.date,
+        useSingleTotal: isSingleTotal,
+        totalAmount: singleTotal.toString(),
         receivedAmount: bill.receivedAmount ? bill.receivedAmount.toString() : '',
         serviceTypes: bill.serviceTypes || [],
         serviceAmounts: restoredServiceAmounts,
@@ -1958,6 +1982,50 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                     Select Service Types & Enter Amount *
                   </label>
+
+                  {/* Single Total Toggle */}
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: '#e3f2fd',
+                    border: '1px solid #2196f3',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    marginBottom: '12px'
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={quickBillData.useSingleTotal}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, useSingleTotal: e.target.checked })}
+                      style={{ marginRight: '8px', cursor: 'pointer', width: '16px', height: '16px' }}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#1976d2' }}>
+                      Enter a Single Total Amount for selected services
+                    </span>
+                  </label>
+
+                  {quickBillData.useSingleTotal && (
+                    <div style={{ marginBottom: '16px', background: '#f5f5f5', padding: '12px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                      <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                        Total Amount (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        value={quickBillData.totalAmount}
+                        onChange={(e) => setQuickBillData({ ...quickBillData, totalAmount: e.target.value })}
+                        placeholder="Enter total amount"
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          border: '1px solid #2196f3',
+                          borderRadius: '6px',
+                          fontSize: '16px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+                  )}
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -2006,7 +2074,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                             <span style={{ fontSize: '15px', fontWeight: '500' }}>{service}</span>
                           </label>
 
-                          {isSelected && (
+                          {isSelected && !quickBillData.useSingleTotal && (
                             <input
                               type="number"
                               placeholder="₹ Enter Amount"
@@ -2076,7 +2144,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     type="button"
                     onClick={() => {
                       closeModal();
-                      setQuickBillData({ customerName: '', date: '', receivedAmount: '', serviceTypes: isPalaceOwner ? ['Palace'] : [], serviceAmounts: {}, items: [], includeItemAmountInTotal: false });
+                      setQuickBillData({ customerName: '', date: '', useSingleTotal: false, totalAmount: '', receivedAmount: '', serviceTypes: isPalaceOwner ? ['Palace'] : [], serviceAmounts: {}, items: [], includeItemAmountInTotal: false });
                       setShowQuickBillItems(false);
                     }}
                     className="btn-cancel"
