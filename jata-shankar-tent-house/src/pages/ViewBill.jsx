@@ -100,12 +100,23 @@ export default function ViewBill() {
                     </thead>
                     <tbody>
                         {bill.isQuickBill && bill.serviceTypes && bill.serviceTypes.length > 0 && (
-                            <tr style={{ borderBottom: '1px solid #eee' }}>
-                                <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {bill.serviceTypes.join(', ')}</td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
-                                <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
-                                <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.baseTotalEntered || bill.total}</td>
-                            </tr>
+                            bill.serviceAmounts ? (
+                                bill.serviceTypes.map(service => (
+                                    <tr key={`service-${service}`} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {service}</td>
+                                        <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                        <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                        <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.serviceAmounts[service] || 0}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr style={{ borderBottom: '1px solid #eee' }}>
+                                    <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {bill.serviceTypes.join(', ')}</td>
+                                    <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                    <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                    <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.baseTotalEntered || bill.total}</td>
+                                </tr>
+                            )
                         )}
                         {(bill.items || []).map((item, index) => (
                             <tr key={index} style={{ borderBottom: '1px solid #eee' }}>

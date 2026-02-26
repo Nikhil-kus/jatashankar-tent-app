@@ -21,9 +21,10 @@ export default function Dashboard() {
     mobileNumber: '',
     address: '', // Added address
     date: '',
-    totalAmount: '',
+    date: '',
     receivedAmount: '',
     serviceTypes: localStorage.getItem('role') === 'palace' ? ['Palace'] : [],
+    serviceAmounts: {},
     items: [],
     includeItemAmountInTotal: false // User option to add item cost to total
   });
@@ -193,7 +194,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
           </thead>
           <tbody>
-            ${bill.isQuickBill && bill.serviceTypes && bill.serviceTypes.length > 0 ? `<tr><td><strong>Service Booking:</strong> ${bill.serviceTypes.join(', ')}</td><td>-</td><td>-</td><td>₹${bill.baseTotalEntered || bill.total}</td></tr>` : ''}
+            ${bill.isQuickBill && bill.serviceTypes && bill.serviceTypes.length > 0 ? (
+        bill.serviceAmounts
+          ? bill.serviceTypes.map(st => `<tr><td><strong>Service Booking:</strong> ${st}</td><td>-</td><td>-</td><td>₹${bill.serviceAmounts[st] || 0}</td></tr>`).join('')
+          : `<tr><td><strong>Service Booking:</strong> ${bill.serviceTypes.join(', ')}</td><td>-</td><td>-</td><td>₹${bill.baseTotalEntered || bill.total}</td></tr>`
+      ) : ''}
             ${(bill.items || []).map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
             <tr class="total-row"><td colspan="3">Total Items: ${(bill.items || []).reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
           </tbody>
@@ -233,13 +238,18 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       setError('Please select a date');
       return;
     }
-    if (!quickBillData.totalAmount || isNaN(quickBillData.totalAmount) || parseFloat(quickBillData.totalAmount) <= 0) {
-      setError('Please enter a valid total amount');
-      return;
-    }
     if (quickBillData.serviceTypes.length === 0) {
       setError('Please select at least one service type');
       return;
+    }
+
+    // Validate that each selected service has a valid positive amount
+    for (const service of quickBillData.serviceTypes) {
+      const amt = quickBillData.serviceAmounts[service];
+      if (!amt || isNaN(amt) || parseFloat(amt) < 0) {
+        setError(`Please enter a valid amount for ${service}`);
+        return;
+      }
     }
 
     try {
@@ -248,7 +258,10 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
       // Calculate item total
       const itemsTotal = (quickBillData.items || []).reduce((sum, item) => sum + (item.rate * item.quantity), 0);
-      const enteredTotal = parseFloat(quickBillData.totalAmount);
+
+      const enteredTotal = quickBillData.serviceTypes.reduce((sum, service) => {
+        return sum + (parseFloat(quickBillData.serviceAmounts[service]) || 0);
+      }, 0);
 
       let finalTotal = enteredTotal;
       if (!quickBillData.includeItemAmountInTotal) {
@@ -276,6 +289,10 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         status: isAutoApproved ? 'approved' : 'pending',
         createdByOwner: true,
         serviceTypes: quickBillData.serviceTypes, // Add service types
+        serviceAmounts: quickBillData.serviceTypes.reduce((acc, curr) => {
+          acc[curr] = parseFloat(quickBillData.serviceAmounts[curr]) || 0;
+          return acc;
+        }, {}) // Store individual service amounts
       };
 
       if (quickBillData.receivedAmount && !isNaN(quickBillData.receivedAmount)) {
@@ -321,9 +338,9 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         mobileNumber: '',
         address: '', // Reset address
         date: '',
-        totalAmount: '',
         receivedAmount: '',
         serviceTypes: isPalaceOwner ? ['Palace'] : [],
+        serviceAmounts: {},
         items: [],
         includeItemAmountInTotal: false
       });
@@ -430,14 +447,23 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     setSelectedBill(null); // Close the active bill view so the edit form renders
 
     if (bill.isQuickBill) {
+      // Restore service amounts, checking for legacy format where only total was stored
+      let restoredServiceAmounts = bill.serviceAmounts || {};
+      if (!bill.serviceAmounts && bill.serviceTypes && bill.serviceTypes.length > 0) {
+        restoredServiceAmounts = {
+          [bill.serviceTypes[0]]: bill.baseTotalEntered || bill.total
+        };
+      }
+
       setQuickBillData({
+
         customerName: bill.customerName,
         mobileNumber: bill.mobileNumber || '',
         address: bill.address || '',
         date: bill.date,
-        totalAmount: bill.baseTotalEntered ? bill.baseTotalEntered.toString() : bill.total.toString(),
         receivedAmount: bill.receivedAmount ? bill.receivedAmount.toString() : '',
         serviceTypes: bill.serviceTypes || [],
+        serviceAmounts: restoredServiceAmounts,
         items: bill.items || [],
         includeItemAmountInTotal: bill.includedItemAmountInTotal || false
       });
@@ -1054,23 +1080,46 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   </div>
 
                   {selectedBill.isQuickBill && selectedBill.serviceTypes && selectedBill.serviceTypes.length > 0 && (
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                        gap: '12px',
-                        padding: '12px',
-                        borderBottom: '1px solid #eee',
-                        fontSize: '13px'
-                      }}
-                    >
-                      <div><strong>Service Booking:</strong> {selectedBill.serviceTypes.join(', ')}</div>
-                      <div style={{ textAlign: 'center' }}>-</div>
-                      <div style={{ textAlign: 'center' }}>-</div>
-                      <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
-                        ₹{selectedBill.baseTotalEntered || selectedBill.total}
+                    selectedBill.serviceAmounts ? (
+                      selectedBill.serviceTypes.map(service => (
+                        <div
+                          key={`service-${service}`}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                            gap: '12px',
+                            padding: '12px',
+                            borderBottom: '1px solid #eee',
+                            fontSize: '13px'
+                          }}
+                        >
+                          <div><strong>Service Booking:</strong> {service}</div>
+                          <div style={{ textAlign: 'center' }}>-</div>
+                          <div style={{ textAlign: 'center' }}>-</div>
+                          <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
+                            ₹{selectedBill.serviceAmounts[service] || 0}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                          gap: '12px',
+                          padding: '12px',
+                          borderBottom: '1px solid #eee',
+                          fontSize: '13px'
+                        }}
+                      >
+                        <div><strong>Service Booking:</strong> {selectedBill.serviceTypes.join(', ')}</div>
+                        <div style={{ textAlign: 'center' }}>-</div>
+                        <div style={{ textAlign: 'center' }}>-</div>
+                        <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
+                          ₹{selectedBill.baseTotalEntered || selectedBill.total}
+                        </div>
                       </div>
-                    </div>
+                    )
                   )}
 
                   {(selectedBill.items || []).map((item, idx) => (
@@ -1712,27 +1761,6 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
-                      Total Amount (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      value={quickBillData.totalAmount}
-                      onChange={(e) => setQuickBillData({ ...quickBillData, totalAmount: e.target.value })}
-                      placeholder="Enter total amount"
-                      step="0.01"
-                      min="0"
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontFamily: 'inherit'
-                      }}
-                    />
-                  </div>
 
                   <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
@@ -1978,6 +2006,40 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     ))}
                   </div>
                 </div>
+
+                {quickBillData.serviceTypes.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      Amounts for Selected Services *
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {quickBillData.serviceTypes.map(service => (
+                        <div key={`amt-${service}`} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ minWidth: '120px', fontSize: '14px', fontWeight: '500' }}>{service}:</span>
+                          <input
+                            type="number"
+                            placeholder="Enter amount"
+                            value={quickBillData.serviceAmounts[service] || ''}
+                            onChange={(e) => setQuickBillData({
+                              ...quickBillData,
+                              serviceAmounts: {
+                                ...quickBillData.serviceAmounts,
+                                [service]: e.target.value
+                              }
+                            })}
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px'
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {quickBillData.totalAmount && (
                   <div style={{
