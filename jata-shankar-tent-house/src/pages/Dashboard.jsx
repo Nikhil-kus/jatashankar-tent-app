@@ -1959,87 +1959,87 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                   </div>
                 )}
 
-                {/* Service Types Selection */}
+                {/* Service Types & Amounts Selection */}
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                    Select Service Types * (Choose one or more)
+                    Select Service Types & Enter Amount *
                   </label>
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-                    gap: '8px'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
                   }}>
-                    {['Tent', 'Palace', 'DJ', 'DJ + Roadlight', 'Rath'].map(service => (
-                      <label
-                        key={service}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '10px',
-                          background: quickBillData.serviceTypes.includes(service) ? '#fff9c4' : '#f5f5f5',
-                          border: quickBillData.serviceTypes.includes(service) ? '2px solid #fbc02d' : '2px solid #ddd',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={quickBillData.serviceTypes.includes(service)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setQuickBillData({
-                                ...quickBillData,
-                                serviceTypes: [...quickBillData.serviceTypes, service]
-                              });
-                            } else {
-                              setQuickBillData({
-                                ...quickBillData,
-                                serviceTypes: quickBillData.serviceTypes.filter(s => s !== service)
-                              });
-                            }
+                    {['Tent', 'Palace', 'DJ', 'DJ + Roadlight', 'Rath'].map(service => {
+                      const isSelected = quickBillData.serviceTypes.includes(service);
+                      return (
+                        <div
+                          key={service}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px',
+                            background: isSelected ? '#fff9c4' : '#f5f5f5',
+                            border: isSelected ? '2px solid #fbc02d' : '2px solid #ddd',
+                            borderRadius: '6px',
+                            transition: 'all 0.3s ease',
+                            flexWrap: 'wrap',
+                            gap: '10px'
                           }}
-                          style={{ marginRight: '6px', cursor: 'pointer' }}
-                        />
-                        <span style={{ fontSize: '14px', fontWeight: '500' }}>{service}</span>
-                      </label>
-                    ))}
+                        >
+                          <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', flex: 1 }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setQuickBillData({
+                                    ...quickBillData,
+                                    serviceTypes: [...quickBillData.serviceTypes, service]
+                                  });
+                                } else {
+                                  const newAmounts = { ...quickBillData.serviceAmounts };
+                                  delete newAmounts[service];
+                                  setQuickBillData({
+                                    ...quickBillData,
+                                    serviceTypes: quickBillData.serviceTypes.filter(s => s !== service),
+                                    serviceAmounts: newAmounts
+                                  });
+                                }
+                              }}
+                              style={{ marginRight: '10px', cursor: 'pointer', width: '16px', height: '16px' }}
+                            />
+                            <span style={{ fontSize: '15px', fontWeight: '500' }}>{service}</span>
+                          </label>
+
+                          {isSelected && (
+                            <input
+                              type="number"
+                              placeholder="₹ Enter Amount"
+                              value={quickBillData.serviceAmounts[service] || ''}
+                              onChange={(e) => setQuickBillData({
+                                ...quickBillData,
+                                serviceAmounts: {
+                                  ...quickBillData.serviceAmounts,
+                                  [service]: e.target.value
+                                }
+                              })}
+                              style={{
+                                width: '140px',
+                                padding: '8px 12px',
+                                border: '1px solid #fbc02d',
+                                borderRadius: '4px',
+                                fontSize: '14px',
+                                outline: 'none'
+                              }}
+                              autoFocus
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {quickBillData.serviceTypes.length > 0 && (
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                      Amounts for Selected Services *
-                    </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {quickBillData.serviceTypes.map(service => (
-                        <div key={`amt-${service}`} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ minWidth: '120px', fontSize: '14px', fontWeight: '500' }}>{service}:</span>
-                          <input
-                            type="number"
-                            placeholder="Enter amount"
-                            value={quickBillData.serviceAmounts[service] || ''}
-                            onChange={(e) => setQuickBillData({
-                              ...quickBillData,
-                              serviceAmounts: {
-                                ...quickBillData.serviceAmounts,
-                                [service]: e.target.value
-                              }
-                            })}
-                            style={{
-                              flex: 1,
-                              padding: '8px 12px',
-                              border: '1px solid #ddd',
-                              borderRadius: '4px',
-                              fontSize: '14px'
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {quickBillData.totalAmount && (
                   <div style={{
