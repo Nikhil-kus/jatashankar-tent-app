@@ -193,8 +193,9 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>
           </thead>
           <tbody>
-            ${bill.items.map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
-            <tr class="total-row"><td colspan="3">Total Items: ${bill.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
+            ${bill.isQuickBill && bill.serviceTypes && bill.serviceTypes.length > 0 ? `<tr><td><strong>Service Booking:</strong> ${bill.serviceTypes.join(', ')}</td><td>-</td><td>-</td><td>₹${bill.baseTotalEntered || bill.total}</td></tr>` : ''}
+            ${(bill.items || []).map(item => `<tr><td>${item.name}</td><td>${item.quantity}</td><td>₹${item.rate}</td><td>₹${item.rate * item.quantity}</td></tr>`).join('')}
+            <tr class="total-row"><td colspan="3">Total Items: ${(bill.items || []).reduce((sum, item) => sum + item.quantity, 0)}</td><td>₹${bill.total}</td></tr>
           </tbody>
         </table>
         <div class="summary">
@@ -1032,7 +1033,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
               </div>
             )}
 
-            {selectedBill.items && selectedBill.items.length > 0 && (
+            {((selectedBill.items && selectedBill.items.length > 0) || (selectedBill.isQuickBill && selectedBill.serviceTypes && selectedBill.serviceTypes.length > 0)) && (
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Items Details</h3>
                 <div style={{ border: '1px solid #ddd', borderRadius: '6px', overflow: 'hidden' }}>
@@ -1052,7 +1053,27 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     <div style={{ textAlign: 'right' }}>Amount</div>
                   </div>
 
-                  {selectedBill.items.map((item, idx) => (
+                  {selectedBill.isQuickBill && selectedBill.serviceTypes && selectedBill.serviceTypes.length > 0 && (
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                        gap: '12px',
+                        padding: '12px',
+                        borderBottom: '1px solid #eee',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <div><strong>Service Booking:</strong> {selectedBill.serviceTypes.join(', ')}</div>
+                      <div style={{ textAlign: 'center' }}>-</div>
+                      <div style={{ textAlign: 'center' }}>-</div>
+                      <div style={{ textAlign: 'right', fontWeight: 'bold', color: '#2196f3' }}>
+                        ₹{selectedBill.baseTotalEntered || selectedBill.total}
+                      </div>
+                    </div>
+                  )}
+
+                  {(selectedBill.items || []).map((item, idx) => (
                     <div
                       key={idx}
                       style={{

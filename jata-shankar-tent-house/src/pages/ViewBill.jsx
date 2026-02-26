@@ -99,7 +99,15 @@ export default function ViewBill() {
                         </tr>
                     </thead>
                     <tbody>
-                        {bill.items.map((item, index) => (
+                        {bill.isQuickBill && bill.serviceTypes && bill.serviceTypes.length > 0 && (
+                            <tr style={{ borderBottom: '1px solid #eee' }}>
+                                <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {bill.serviceTypes.join(', ')}</td>
+                                <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
+                                <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.baseTotalEntered || bill.total}</td>
+                            </tr>
+                        )}
+                        {(bill.items || []).map((item, index) => (
                             <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
                                 <td style={{ padding: '12px' }}>{item.name}</td>
                                 <td style={{ padding: '12px', textAlign: 'center' }}>{item.quantity}</td>
