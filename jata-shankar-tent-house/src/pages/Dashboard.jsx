@@ -49,6 +49,7 @@ export default function Dashboard() {
   const [selectedItemForQuickBill, setSelectedItemForQuickBill] = useState(null);
   const [quickBillInputQty, setQuickBillInputQty] = useState(1);
   const [showQuickBillItems, setShowQuickBillItems] = useState(false);
+  const [showQuickBillReceivedModal, setShowQuickBillReceivedModal] = useState(false); // New modal state
 
   // Payment History states
   const [showPaymentMenu, setShowPaymentMenu] = useState(false);
@@ -253,6 +254,18 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
 
     try {
+      // Just validate and show the received amount modal instead of submitting directly
+      setShowQuickBillReceivedModal(true);
+    } catch (err) {
+      setError('Failed to process bill: ' + err.message);
+      console.error(err);
+    }
+  };
+
+  // Final submission of quick bill after received amount is entered
+  const submitFinalQuickBill = async (e) => {
+    e?.preventDefault();
+    try {
       setCreatingBill(true);
       setError('');
 
@@ -344,6 +357,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         items: [],
         includeItemAmountInTotal: false
       });
+      setShowQuickBillReceivedModal(false);
       setShowQuickBill(false);
       setShowQuickBillItems(false);
       setEditingBillId(null); // Reset editing state
@@ -1803,27 +1817,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>
-                      Received Amount (₹) (Optional)
-                    </label>
-                    <input
-                      type="number"
-                      value={quickBillData.receivedAmount}
-                      onChange={(e) => setQuickBillData({ ...quickBillData, receivedAmount: e.target.value })}
-                      placeholder="Enter received amount"
-                      step="0.01"
-                      min="0"
-                      style={{
-                        width: '100%',
-                        padding: '10px',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        fontSize: '14px',
-                        fontFamily: 'inherit'
-                      }}
-                    />
-                  </div>
+
                 </div>
 
                 {/* Quick Bill Items Selection */}
@@ -2024,6 +2018,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                                   [service]: e.target.value
                                 }
                               })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                }
+                              }}
                               style={{
                                 width: '140px',
                                 padding: '8px 12px',
@@ -2061,31 +2060,6 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                           : quickBillData.totalAmount}
                       </p>
                     </div>
-                    {quickBillData.receivedAmount && (
-                      <>
-                        <div style={{ textAlign: 'center' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Received</p>
-                          <p style={{ margin: '0', fontSize: '16px', fontWeight: 'bold', color: '#4caf50' }}>
-                            ₹{quickBillData.receivedAmount}
-                          </p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#666' }}>Balance</p>
-                          <p style={{
-                            margin: '0',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            color: ((!quickBillData.includeItemAmountInTotal && quickBillData.items)
-                              ? parseFloat(quickBillData.totalAmount || 0) + quickBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0)
-                              : parseFloat(quickBillData.totalAmount)) - parseFloat(quickBillData.receivedAmount) > 0 ? '#f44336' : '#4caf50'
-                          }}>
-                            ₹{((!quickBillData.includeItemAmountInTotal && quickBillData.items)
-                              ? parseFloat(quickBillData.totalAmount || 0) + quickBillData.items.reduce((sum, item) => sum + (item.rate * item.quantity), 0)
-                              : parseFloat(quickBillData.totalAmount)) - parseFloat(quickBillData.receivedAmount || 0)}
-                          </p>
-                        </div>
-                      </>
-                    )}
                   </div>
                 )}
 
@@ -2102,7 +2076,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     type="button"
                     onClick={() => {
                       closeModal();
-                      setQuickBillData({ customerName: '', date: '', totalAmount: '', receivedAmount: '', serviceTypes: isPalaceOwner ? ['Palace'] : [], items: [], includeItemAmountInTotal: false });
+                      setQuickBillData({ customerName: '', date: '', receivedAmount: '', serviceTypes: isPalaceOwner ? ['Palace'] : [], serviceAmounts: {}, items: [], includeItemAmountInTotal: false });
                       setShowQuickBillItems(false);
                     }}
                     className="btn-cancel"
@@ -2115,70 +2089,169 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
             </div>
           )}
 
-          {/* Grouped Bills Rendering */}
-          {bills.length > 0 && (
-            <div className="section" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
-              {/* Pending Action Required */}
-              {pendingBillsList.length > 0 && (
-                <div style={{ marginBottom: '32px' }}>
-                  <h3 style={{ fontSize: '18px', color: '#d32f2f', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ background: '#ffebee', padding: '6px 12px', borderRadius: '6px' }}>⚠️ Action Required</span>
+          {/* Quick Bill Received Amount Modal */}
+          {
+            showQuickBillReceivedModal && (
+              <div style={{
+                position: 'fixed',
+                top: 0, left: 0, right: 0, bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: '20px'
+              }}>
+                <div style={{
+                  background: 'white',
+                  padding: '24px',
+                  borderRadius: '12px',
+                  width: '100%',
+                  maxWidth: '400px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                }}>
+                  <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#333', fontSize: '18px' }}>
+                    Enter Received Amount
                   </h3>
-                  <div className="bills-row">
-                    {pendingBillsList.map(b => renderBillCard(b, false))}
+
+                  <div style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#666' }}>
+                      Received Amount (₹) (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      value={quickBillData.receivedAmount}
+                      onChange={(e) => setQuickBillData({ ...quickBillData, receivedAmount: e.target.value })}
+                      placeholder="Enter amount received"
+                      step="0.01"
+                      min="0"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          submitFinalQuickBill();
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '16px',
+                        outline: 'none'
+                      }}
+                    />
+                    <p style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                      Leave blank if payment is pending.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={submitFinalQuickBill}
+                      disabled={creatingBill}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#4caf50',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '15px',
+                        fontWeight: '500',
+                        cursor: creatingBill ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {creatingBill ? 'Saving...' : 'Save Bill'}
+                    </button>
+                    <button
+                      onClick={() => setShowQuickBillReceivedModal(false)}
+                      style={{
+                        flex: 1,
+                        padding: '12px',
+                        background: '#f5f5f5',
+                        color: '#666',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        fontSize: '15px',
+                        fontWeight: '500',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Back
+                    </button>
                   </div>
                 </div>
-              )}
+              </div>
+            )
+          }
 
-              {/* Nearest Event */}
-              {nearestBillObj && (
-                <div style={{ marginBottom: '32px' }}>
-                  <h3 style={{ fontSize: '18px', color: '#f57f17', marginBottom: '16px', paddingLeft: '4px' }}>Nearest Event</h3>
-                  <div className="bills-row">
-                    {renderBillCard(nearestBillObj, true)}
-                  </div>
-                </div>
-              )}
-
-              {/* Upcoming Events */}
-              {Object.keys(groupedUpcoming).length > 0 && (
-                <div style={{ marginBottom: '32px' }}>
-                  <h3 style={{ fontSize: '18px', color: '#333', marginBottom: '16px', paddingLeft: '4px' }}>Upcoming Dates</h3>
-                  {Object.keys(groupedUpcoming).sort((a, b) => new Date(a) - new Date(b)).map(date => (
-                    <div key={date} style={{ marginBottom: '24px' }}>
-                      <h4 className="date-group-header">
-                        {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-                      </h4>
-                      <div className="bills-row">
-                        {groupedUpcoming[date].map(b => renderBillCard(b, false))}
-                      </div>
+          {/* Grouped Bills Rendering */}
+          {
+            bills.length > 0 && (
+              <div className="section" style={{ background: 'transparent', boxShadow: 'none', padding: 0 }}>
+                {/* Pending Action Required */}
+                {pendingBillsList.length > 0 && (
+                  <div style={{ marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '18px', color: '#d32f2f', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ background: '#ffebee', padding: '6px 12px', borderRadius: '6px' }}>⚠️ Action Required</span>
+                    </h3>
+                    <div className="bills-row">
+                      {pendingBillsList.map(b => renderBillCard(b, false))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {/* Past Events */}
-              {Object.keys(groupedPast).length > 0 && (
-                <details className="past-bills-accordion">
-                  <summary className="past-bills-summary">📁 View Past Event Bills ({pastBillsList.length})</summary>
-                  <div className="past-bills-content">
-                    {Object.keys(groupedPast).sort((a, b) => new Date(b) - new Date(a)).map(date => (
+                {/* Nearest Event */}
+                {nearestBillObj && (
+                  <div style={{ marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '18px', color: '#f57f17', marginBottom: '16px', paddingLeft: '4px' }}>Nearest Event</h3>
+                    <div className="bills-row">
+                      {renderBillCard(nearestBillObj, true)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upcoming Events */}
+                {Object.keys(groupedUpcoming).length > 0 && (
+                  <div style={{ marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '18px', color: '#333', marginBottom: '16px', paddingLeft: '4px' }}>Upcoming Dates</h3>
+                    {Object.keys(groupedUpcoming).sort((a, b) => new Date(a) - new Date(b)).map(date => (
                       <div key={date} style={{ marginBottom: '24px' }}>
-                        <h4 className="date-group-header past">
+                        <h4 className="date-group-header">
                           {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                         </h4>
                         <div className="bills-row">
-                          {groupedPast[date].map(b => renderBillCard(b, false))}
+                          {groupedUpcoming[date].map(b => renderBillCard(b, false))}
                         </div>
                       </div>
                     ))}
                   </div>
-                </details>
-              )}
+                )}
 
-            </div>
-          )}
-        </div>
+                {/* Past Events */}
+                {Object.keys(groupedPast).length > 0 && (
+                  <details className="past-bills-accordion">
+                    <summary className="past-bills-summary">📁 View Past Event Bills ({pastBillsList.length})</summary>
+                    <div className="past-bills-content">
+                      {Object.keys(groupedPast).sort((a, b) => new Date(b) - new Date(a)).map(date => (
+                        <div key={date} style={{ marginBottom: '24px' }}>
+                          <h4 className="date-group-header past">
+                            {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                          </h4>
+                          <div className="bills-row">
+                            {groupedPast[date].map(b => renderBillCard(b, false))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+
+              </div>
+            )
+          }
+        </div >
       )
       }
       <div style={{ textAlign: 'center', marginTop: '40px', color: '#999', fontSize: '12px', paddingBottom: '20px' }}>
@@ -2186,164 +2259,170 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       </div>
 
       {/* Quantity Selection Modal */}
-      {qtyModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 2000 // Higher z-index to be on top of everything
-        }}>
+      {
+        qtyModalOpen && (
           <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '8px',
-            width: '90%',
-            maxWidth: '350px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000 // Higher z-index to be on top of everything
           }}>
-            <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
-              Quantity for {selectedItemForDetailedBill?.name}
-            </h3>
-            <form onSubmit={handleConfirmDetailedBillQty}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Enter Quantity:
-                </label>
-                <input
-                  type="number"
-                  value={detailedBillInputQty}
-                  onChange={(e) => setDetailedBillInputQty(e.target.value)}
-                  min="1"
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    fontSize: '18px',
-                    border: '2px solid #2196f3',
-                    borderRadius: '4px',
-                    textAlign: 'center'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => setQtyModalOpen(false)}
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    background: '#f5f5f5',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    background: '#2196f3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '14px'
-                  }}
-                >
-                  Add Items
-                </button>
-              </div>
-            </form>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              width: '90%',
+              maxWidth: '350px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
+                Quantity for {selectedItemForDetailedBill?.name}
+              </h3>
+              <form onSubmit={handleConfirmDetailedBillQty}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Enter Quantity:
+                  </label>
+                  <input
+                    type="number"
+                    value={detailedBillInputQty}
+                    onChange={(e) => setDetailedBillInputQty(e.target.value)}
+                    min="1"
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '18px',
+                      border: '2px solid #2196f3',
+                      borderRadius: '4px',
+                      textAlign: 'center'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setQtyModalOpen(false)}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      background: '#f5f5f5',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      background: '#2196f3',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '14px'
+                    }}
+                  >
+                    Add Items
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Quick Bill Quantity Modal */}
-      {quickQtyModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
-        }}>
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '350px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
-              Quantity for {selectedItemForQuickBill?.name}
-            </h3>
-            <form onSubmit={handleConfirmQuickBillQty}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Enter Quantity:</label>
-                <input
-                  type="number"
-                  value={quickBillInputQty}
-                  onChange={(e) => setQuickBillInputQty(e.target.value)}
-                  min="1" autoFocus
-                  style={{ width: '100%', padding: '12px', fontSize: '18px', border: '2px solid #D97706', borderRadius: '4px', textAlign: 'center' }}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => setQuickQtyModalOpen(false)} style={{ flex: 1, padding: '10px', border: '1px solid #ddd', background: '#f5f5f5', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" style={{ flex: 1, padding: '10px', background: '#D97706', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add Items</button>
-              </div>
-            </form>
+      {
+        quickQtyModalOpen && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+          }}>
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '350px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+              <h3 style={{ marginTop: 0, marginBottom: '16px', color: '#333' }}>
+                Quantity for {selectedItemForQuickBill?.name}
+              </h3>
+              <form onSubmit={handleConfirmQuickBillQty}>
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Enter Quantity:</label>
+                  <input
+                    type="number"
+                    value={quickBillInputQty}
+                    onChange={(e) => setQuickBillInputQty(e.target.value)}
+                    min="1" autoFocus
+                    style={{ width: '100%', padding: '12px', fontSize: '18px', border: '2px solid #D97706', borderRadius: '4px', textAlign: 'center' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button type="button" onClick={() => setQuickQtyModalOpen(false)} style={{ flex: 1, padding: '10px', border: '1px solid #ddd', background: '#f5f5f5', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#D97706', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add Items</button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Payment History Modal */}
-      {showPaymentHistoryModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000
-        }}>
-          <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
-              <h3 style={{ margin: 0, color: '#2e7d32' }}>Payment Update History</h3>
-              <button
-                onClick={() => setShowPaymentHistoryModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}
-              >
-                ✕
-              </button>
-            </div>
+      {
+        showPaymentHistoryModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000
+          }}>
+            <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', width: '90%', maxWidth: '400px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+                <h3 style={{ margin: 0, color: '#2e7d32' }}>Payment Update History</h3>
+                <button
+                  onClick={() => setShowPaymentHistoryModal(false)}
+                  style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#666' }}
+                >
+                  ✕
+                </button>
+              </div>
 
-            <div style={{ overflowY: 'auto', flex: 1 }}>
-              {(!selectedBill?.paymentHistory || selectedBill.paymentHistory.length === 0) ? (
-                <p style={{ color: '#666', textAlign: 'center', marginTop: '20px' }}>No payment history recorded yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {selectedBill.paymentHistory.map((entry, index) => (
-                    <div key={index} style={{
-                      padding: '12px', border: '1px solid #e0e0e0', borderRadius: '6px', background: '#f9f9f9'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#4caf50' }}>₹{entry.amount}</span>
-                        <span style={{ fontSize: '12px', color: '#666' }}>
-                          {new Date(entry.date).toLocaleString()}
-                        </span>
-                      </div>
-                      {selectedBill?.serviceTypes?.includes('Palace') && (
-                        <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
-                          Updated by: {entry.updatedBy || 'Unknown User'}
+              <div style={{ overflowY: 'auto', flex: 1 }}>
+                {(!selectedBill?.paymentHistory || selectedBill.paymentHistory.length === 0) ? (
+                  <p style={{ color: '#666', textAlign: 'center', marginTop: '20px' }}>No payment history recorded yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {selectedBill.paymentHistory.map((entry, index) => (
+                      <div key={index} style={{
+                        padding: '12px', border: '1px solid #e0e0e0', borderRadius: '6px', background: '#f9f9f9'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                          <span style={{ fontWeight: 'bold', color: '#4caf50' }}>₹{entry.amount}</span>
+                          <span style={{ fontSize: '12px', color: '#666' }}>
+                            {new Date(entry.date).toLocaleString()}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        {selectedBill?.serviceTypes?.includes('Palace') && (
+                          <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
+                            Updated by: {entry.updatedBy || 'Unknown User'}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }
