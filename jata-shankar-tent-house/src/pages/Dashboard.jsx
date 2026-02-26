@@ -780,7 +780,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     'Tent': { bg: '#FFEBEE', text: '#D32F2F' },
                     'Palace': { bg: '#E0F2F1', text: '#00695C' },
                     'DJ': { bg: '#EEE', text: '#333' },
-                    'Roadlight': { bg: '#EDE7F6', text: '#512DA8' },
+                    'DJ + Roadlight': { bg: '#EDE7F6', text: '#512DA8' },
                     'Rath': { bg: '#FFF3E0', text: '#E65100' }
                   };
                   const colors = serviceColors[service] || { bg: '#E3F2FD', text: '#1565C0' };
@@ -1941,7 +1941,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
                     gap: '8px'
                   }}>
-                    {['Tent', 'Palace', 'DJ', 'Roadlight', 'Rath'].map(service => (
+                    {['Tent', 'Palace', 'DJ', 'DJ + Roadlight', 'Rath'].map(service => (
                       <label
                         key={service}
                         style={{
