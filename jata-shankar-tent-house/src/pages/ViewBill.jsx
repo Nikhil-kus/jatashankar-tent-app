@@ -92,7 +92,7 @@ export default function ViewBill() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '30px' }}>
                     <thead>
                         <tr style={{ background: '#f5f5f5' }}>
-                            <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Item Description</th>
+                            <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #ddd' }}>Item Description</th>
                             <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #ddd' }}>Qty</th>
                             <th style={{ padding: '12px', textAlign: 'center', borderBottom: '1px solid #ddd' }}>Rate</th>
                             <th style={{ padding: '12px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>Amount</th>
@@ -103,7 +103,7 @@ export default function ViewBill() {
                             bill.serviceAmounts ? (
                                 bill.serviceTypes.map(service => (
                                     <tr key={`service-${service}`} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {service}</td>
+                                        <td style={{ padding: '12px', textAlign: 'center' }}><strong>Service Booking:</strong> {service}</td>
                                         <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
                                         <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
                                         <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.serviceAmounts[service] || 0}</td>
@@ -111,7 +111,7 @@ export default function ViewBill() {
                                 ))
                             ) : (
                                 <tr style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={{ padding: '12px' }}><strong>Service Booking:</strong> {bill.serviceTypes.join(', ')}</td>
+                                    <td style={{ padding: '12px', textAlign: 'center' }}><strong>Service Booking:</strong> {bill.serviceTypes.join(', ')}</td>
                                     <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
                                     <td style={{ padding: '12px', textAlign: 'center' }}>-</td>
                                     <td style={{ padding: '12px', textAlign: 'right' }}>₹{bill.baseTotalEntered || bill.total}</td>
@@ -120,7 +120,7 @@ export default function ViewBill() {
                         )}
                         {(bill.items || []).map((item, index) => (
                             <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                                <td style={{ padding: '12px' }}>{item.name}</td>
+                                <td style={{ padding: '12px', textAlign: 'center' }}>{item.name}</td>
                                 <td style={{ padding: '12px', textAlign: 'center' }}>{item.quantity}</td>
                                 <td style={{ padding: '12px', textAlign: 'center' }}>₹{item.rate}</td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>₹{item.rate * item.quantity}</td>
@@ -129,14 +129,14 @@ export default function ViewBill() {
                     </tbody>
                     <tfoot>
                         <tr style={{ background: '#f9f9f9', fontWeight: 'bold' }}>
-                            <td colSpan="3" style={{ padding: '12px', textAlign: 'right' }}>Total Amount:</td>
+                            <td colSpan="3" style={{ padding: '12px', textAlign: 'center' }}>Total Amount:</td>
                             <td style={{ padding: '12px', textAlign: 'right', color: '#2196f3', fontSize: '18px' }}>₹{bill.total}</td>
                         </tr>
                     </tfoot>
                 </table>
 
                 {/* Summary */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
                     <div style={{ width: '300px', background: '#f9f9f9', padding: '20px', borderRadius: '4px' }}>
                         {bill.receivedAmount ? (
                             <>
