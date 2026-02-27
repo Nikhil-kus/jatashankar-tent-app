@@ -271,7 +271,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
   };
 
   // Final submission of quick bill after received amount is entered
-  const submitFinalQuickBill = async (e) => {
+  const submitFinalQuickBill = async (e, receiver = null) => {
     e?.preventDefault();
     try {
       setCreatingBill(true);
@@ -321,10 +321,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         status: isAutoApproved ? 'approved' : 'pending',
         createdByOwner: true,
         serviceTypes: quickBillData.serviceTypes, // Add service types
-        total: finalTotal,
-        baseTotalEntered: enteredTotal, // Store original entered total
         useSingleTotal: quickBillData.useSingleTotal,
-        includedItemAmountInTotal: quickBillData.includeItemAmountInTotal,
         serviceAmounts: finalServiceAmounts // Store individual service amounts ONLY if useSingleTotal is false
       };
 
@@ -337,7 +334,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
           billData.paymentHistory = [{
             amount: received,
             date: new Date().toISOString(),
-            updatedBy: isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin')
+            updatedBy: receiver ? `Who Received: ${receiver}` : (isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin'))
           }];
         }
       }
@@ -689,7 +686,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
     }
   };
 
-  const handleUpdatePayment = async () => {
+  const handleUpdatePayment = async (receiver = null) => {
     if (!newReceivedAmount || isNaN(newReceivedAmount)) {
       setError('Please enter a valid amount');
       return;
@@ -702,7 +699,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       const newHistoryEntry = {
         amount: newAmount,
         date: new Date().toISOString(),
-        updatedBy: isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin')
+        updatedBy: receiver ? `Who Received: ${receiver}` : (isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin'))
       };
 
       const existingHistory = selectedBill.paymentHistory || [];
@@ -1318,28 +1315,66 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                         }}
                       />
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={handleUpdatePayment}
-                        disabled={updating}
-                        style={{
-                          flex: 1,
-                          background: '#4caf50',
-                          color: 'white',
-                          border: 'none',
-                          padding: '8px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontWeight: '500'
-                        }}
-                      >
-                        {updating ? 'Saving...' : 'Save Amount'}
-                      </button>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {/* Show Who Received options if Palace and amount > 0 */}
+                      {selectedBill?.serviceTypes?.includes('Palace') && parseFloat(newReceivedAmount || 0) > 0 ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdatePayment('Salig')}
+                            disabled={updating}
+                            style={{
+                              flex: 1,
+                              background: '#2196f3',
+                              color: 'white',
+                              border: 'none',
+                              padding: '8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: '500'
+                            }}
+                          >
+                            {updating ? 'Saving...' : 'Salig Received'}
+                          </button>
+                          <button
+                            onClick={() => handleUpdatePayment('Jay')}
+                            disabled={updating}
+                            style={{
+                              flex: 1,
+                              background: '#9c27b0',
+                              color: 'white',
+                              border: 'none',
+                              padding: '8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontWeight: '500'
+                            }}
+                          >
+                            {updating ? 'Saving...' : 'Jay Received'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleUpdatePayment()}
+                          disabled={updating}
+                          style={{
+                            flex: 1,
+                            background: '#4caf50',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          {updating ? 'Saving...' : 'Save Amount'}
+                        </button>
+                      )}
                       <button
                         onClick={() => setEditingPayment(false)}
                         disabled={updating}
                         style={{
-                          flex: 1,
+                          flex: selectedBill?.serviceTypes?.includes('Palace') && parseFloat(newReceivedAmount || 0) > 0 ? '100%' : 1,
                           background: '#f44336',
                           color: 'white',
                           border: 'none',
@@ -2214,28 +2249,68 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                     </p>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <button
-                      onClick={submitFinalQuickBill}
-                      disabled={creatingBill}
-                      style={{
-                        flex: 1,
-                        padding: '12px',
-                        background: '#4caf50',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '15px',
-                        fontWeight: '500',
-                        cursor: creatingBill ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      {creatingBill ? 'Saving...' : 'Save Bill'}
-                    </button>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Show Who Received options if Palace and amount > 0 */}
+                    {quickBillData.serviceTypes.includes('Palace') && parseFloat(quickBillData.receivedAmount) > 0 ? (
+                      <>
+                        <button
+                          onClick={(e) => submitFinalQuickBill(e, 'Salig')}
+                          disabled={creatingBill}
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            background: '#2196f3',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '15px',
+                            fontWeight: '500',
+                            cursor: creatingBill ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {creatingBill ? 'Saving...' : 'Salig Received'}
+                        </button>
+                        <button
+                          onClick={(e) => submitFinalQuickBill(e, 'Jay')}
+                          disabled={creatingBill}
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            background: '#9c27b0',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '15px',
+                            fontWeight: '500',
+                            cursor: creatingBill ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {creatingBill ? 'Saving...' : 'Jay Received'}
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={(e) => submitFinalQuickBill(e)}
+                        disabled={creatingBill}
+                        style={{
+                          flex: 1,
+                          padding: '12px',
+                          background: '#4caf50',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '15px',
+                          fontWeight: '500',
+                          cursor: creatingBill ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {creatingBill ? 'Saving...' : 'Save Bill'}
+                      </button>
+                    )}
                     <button
                       onClick={() => setShowQuickBillReceivedModal(false)}
                       style={{
-                        flex: 1,
+                        flex: quickBillData.serviceTypes.includes('Palace') && parseFloat(quickBillData.receivedAmount) > 0 ? '100%' : 1,
                         padding: '12px',
                         background: '#f5f5f5',
                         color: '#666',
@@ -2479,7 +2554,7 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                         </div>
                         {selectedBill?.serviceTypes?.includes('Palace') && (
                           <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
-                            Updated by: {entry.updatedBy || 'Unknown User'}
+                            {entry.updatedBy?.startsWith('Who Received:') ? entry.updatedBy : `Updated by: ${entry.updatedBy || 'Unknown User'}`}
                           </div>
                         )}
                       </div>
