@@ -331,10 +331,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
 
         // Add initial payment to history if creating a new bill
         if (!editingBillId && received > 0) {
+          const userIdentifier = isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin');
           billData.paymentHistory = [{
             amount: received,
             date: new Date().toISOString(),
-            updatedBy: receiver ? `Who Received: ${receiver}` : (isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin'))
+            updatedBy: receiver ? `Who Received: ${receiver} (Saved by: ${userIdentifier})` : userIdentifier
           }];
         }
       }
@@ -696,10 +697,11 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
       setUpdating(true);
       const newAmount = parseFloat(newReceivedAmount);
 
+      const userIdentifier = isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin');
       const newHistoryEntry = {
         amount: newAmount,
         date: new Date().toISOString(),
-        updatedBy: receiver ? `Who Received: ${receiver}` : (isPalaceOwner ? 'Palace Owner (55555)' : (auth.currentUser?.email || 'Admin'))
+        updatedBy: receiver ? `Who Received: ${receiver} (Saved by: ${userIdentifier})` : userIdentifier
       };
 
       const existingHistory = selectedBill.paymentHistory || [];
@@ -2553,8 +2555,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
                           </span>
                         </div>
                         {selectedBill?.serviceTypes?.includes('Palace') && (
-                          <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic' }}>
-                            {entry.updatedBy?.startsWith('Who Received:') ? entry.updatedBy : `Updated by: ${entry.updatedBy || 'Unknown User'}`}
+                          <div style={{ fontSize: '12px', color: '#888', fontStyle: 'italic', marginTop: '4px' }}>
+                            {entry.updatedBy?.includes('Who Received:') ? entry.updatedBy : `Updated by: ${entry.updatedBy || 'Unknown User'}`}
                           </div>
                         )}
                       </div>
