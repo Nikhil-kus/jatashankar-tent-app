@@ -370,6 +370,8 @@ https://jatashankar-tent-app.vercel.app/bill?id=${bill.id}`;
         address: '', // Reset address
         date: '',
         receivedAmount: '',
+        useSingleTotal: false,
+        totalAmount: '',
         serviceTypes: isPalaceOwner ? ['Palace'] : [],
         serviceAmounts: {},
         items: [],
